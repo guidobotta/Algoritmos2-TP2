@@ -1,6 +1,8 @@
+#include <heap.h>
+#include <hash.h>
+#include <abb.h>
 
-
-
+#include <stdio.h>
 
 /*
     Para cada archivo nuevo:
