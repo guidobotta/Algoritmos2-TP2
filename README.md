@@ -1,10 +1,12 @@
 # TRABAJO PRACTICO 2
 
-## Sistema de Consulta de Vuelos
+## **Sistema de Consulta de Vuelos**
 
 ---
 
-### **Funciones**
+## **Funciones**
+
+---
 
 - **Agregar_archivo:**
 
@@ -19,6 +21,10 @@ Si el comando se ejecuta correctamente deberá imprimir *OK* por salida estánda
 
 Al ejecutarse, el programa deberá leer el archivo, parsear cada línea sabiendo que tiene el formato csv y guardar cada línea en la/las estructuras auxiliares correspondientes para ser capaz de ejecutar los otros comandos. En caso que dos líneas tengan el mismo código de vuelo, el sistema se deberá quedar solamente con la información de la última aparición.
 Este comando se puede ejecutar más de una vez durante el ciclo de uso de nuestro programa, y por lo tanto puede recibir nuevos archivos. Si un nuevo archivo procesado contiene un código de vuelo que ya se encuentra en nuestro sistema, nuestro programa deberá quedarse solamente con la información de la última aparición.
+
+**Tiempo de Ejecución:** El mantenimiento para actualizar los vuelos debe ser O( V log(n) ) siendo V la cantidad de vuelos en el nuevo archivo y n la cantidad total de vuelos en el sistema.
+
+---
 
 - **Ver_tablero:**
   
@@ -50,6 +56,10 @@ Al ejecutarse deberán imprimir por salida estandar las fechas de despegue y los
 2. Recibir un modo que no sea asc o desc
 3. Recibir una fecha hasta que sea anterior a la fecha desde
 
+**Tiempo de Ejecución:** debe ser O(v) en el peor caso (en el que se tenga que mostrar todos los vuelos del sistema), O(logv) en un caso promedio (en el caso en el que no se pidan mostrar demasiados visitantes). V es la cantidad de vuelos.
+
+---
+
 - **Info_vuelo:**
 
 Existen ocasiones en las cuales un operario necesita ver información detallada de un vuelo. Por este motivo es necesario que ingresando el código de vuelo, el sistema devuelva toda la información posible asociada al mismo.
@@ -65,6 +75,10 @@ Este comando debe mostrar toda la informacion del vuelo cuyo código de vuelo co
 
 En caso de ingresar un código de vuelo que no exista dentro de los códigos procesados, se deberá devolver un mensaje de error con el formato anteriormente mencionado.
 
+**Tiempo de Ejecución:** debe ser O(1).
+
+---
+
 - **Prioridad_vuelos:**
 
 Algueiza tiene un sistema de prioridades sobre los vuelos que necesitan atención especial, los operarios necesitan saber cuales son esos vuelos. Nuestro sistema deberá ser capaz de devolver los K vuelos que tienen prioridad más importante.
@@ -79,6 +93,10 @@ Este comando deberá mostrar de mayor a menor, los K vuelos con mayor prioridad 
     3 - 324
     3 - 325
     OK
+
+**Tiempo de Ejecución:** debe ser O( n log(K) ) siendo K la cantidad de vuelos a mostrar y n la cantidad de vuelos en el sistema.
+
+---
 
 - **Borrar:**
 
@@ -101,15 +119,7 @@ Con este fin se debe incorporar la posibilidad de eliminar información de vuelo
 
 Al ejecutarse, todos los vuelos cuya fecha de despegue que sean mayores a < desde > y menores a < hasta > tienen que ser borrados del sistema y mostrados por salida estandar. En caso de que se reciba una fecha < hasta > que sea menor a < dede >, se deberá devolver un mensaje de error con el formato anteriormente mencionado.
 
----
-
-### **Tiempos de ejecución**
-
-1. **Agregar_archivo:** El mantenimiento para actualizar los vuelos debe ser O( V log(n) ) siendo V la cantidad de vuelos en el nuevo archivo y n la cantidad total de vuelos en el sistema.
-2. **Ver_tablero:** debe ser O(v) en el peor caso (en el que se tenga que mostrar todos los vuelos del sistema), O(logv) en un caso promedio (en el caso en el que no se pidan mostrar demasiados visitantes). V es la cantidad de vuelos.
-3. **Info_vuelo:** debe ser O(1).
-4. Prioridad_vuelos:** debe ser O( n log(K) ) siendo K la cantidad de vuelos a mostrar y n la cantidad de vuelos en el sistema.
-5. **Borrar:** debe ser O( K log (n) ) siendo K la cantidad de vuelos que hay en el rango de fechas ingresado y n la cantidad de vuelos en todo el sistema.
+**Tiempo de Ejecución:** debe ser O( K log (n) ) siendo K la cantidad de vuelos que hay en el rango de fechas ingresado y n la cantidad de vuelos en todo el sistema.
 
 ---
 
