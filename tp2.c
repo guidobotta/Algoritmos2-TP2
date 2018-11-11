@@ -1,8 +1,10 @@
-#include <heap.h>
-#include <hash.h>
-#include <abb.h>
+#include "heap.h"
+#include "hash.h"
+#include "abb.h"
+#include "strutil.h"
 
 #include <stdio.h>
+#include <stdbool.h>
 
 /*
     Para cada archivo nuevo:
@@ -51,45 +53,12 @@ vuelo_t *crear_vuelo(){
 }
 
 bool agregar_archivo(char* nombre_archivo){
-    //QUIZAS CONVIENE SEPARAR TODO ESTO EN DISTINTAS FUNCIONES, HEAP, ABB, HASH.
+    
     FILE* archivo = fopen(nombre_archivo, "r");
     if(!archivo) return false;
-    vuelo_t *vuelo = crear_vuelo();
-    if(!vuelo){
-        fclose(archivo);
-        return false;
-    }
-    heap_t *heap = heap_crear(funcion_comparacion);
-    if(!heap){
-        fclose(archivo);
-        free(vuelo);
-        return false;
-    }
-    hash_t* hash = hash_crear(free);
-    if(!hash){
-        fclose(archivo);
-        free(vuelo);
-        free(heap);
-        return false;
-    }
-    hash_t* abb = abb_crear(free, funcion_comparacion);
-    if(!abb){
-        fclose(archivo);
-        free(vuelo);
-        free(heap);
-        free(hash);
-        return false;
-    }
-    vuelo_heap_t *vuelo_heap = malloc(sizeof(vuelo_heap_t));
-    if(!vuelo_heap){
-        fclose(archivo);
-        free(vuelo);
-        free(heap);
-        free(abb);
-        free(hash);
-        return false;
-    }
-    fscanf(FORMATO_ARCHIVO, //<--- Es una constante que tiene un char* con el formato del .csv
+    
+    fscanf(archivo,
+        FORMATO_ARCHIVO, //<--- Es una constante que tiene un char* con el formato del .csv
         vuelo->flight_number,
         vuelo->airline
         vuelo->origin_airport
@@ -111,20 +80,50 @@ bool agregar_archivo(char* nombre_archivo){
     fclose(archivo);
 }
 
+///
+// EJECUTA LA OPERACIÓN
+///
+void ejecucion(char* linea){
+    char** comando = split(linea, ' ');
+    if (!strcmp(comando[0], "agregar_archivo")); //EJECUTAR AGREGAR_ARCHIVO
+    else if (!strcmp(comando[0], "ver_tablero")); //EJECUTAR VER_TABLERO
+    else if (!strcmp(comando[0], "info_vuelo")); //EJECUTAR INFO_VUELO
+    else if (!strcmp(comando[0], "prioridad_vuelos")); //EJECUTAR PRIORIDAD_VUELOS
+    else if (!strcmp(comando[0], "borrar")); //EJECUTAR BORRAR
+}
+
+/*
+Ejecuta el main.c y se queda esperando input del usuario
+
+#agregar_archivo <nombre_archivo>
+Llama a la funcion agregar_archivo(nombre_archivo);
+#ver_tablero <k cantidad vuelo> <modo: asc/desc> <desde> <hasta>
+Llama a la funcion ver_tablero();
+#info_vuelo <codigo vuelo>
+Llama a la funcion info_vuelo();
+#prioridad_vuelos <k cantidad vuelos>
+Llama a la funcion prioridad_vuelos();
+#borrar <desde> <hasta>
+Llama a la funcion borrar();
+*/
 int main(){
-    /*
-    Ejecuta el main.c y se queda esperando input del usuario
 
-    #agregar_archivo <nombre_archivo>
-    Llama a la funcion agregar_archivo(nombre_archivo);
-    #ver_tablero <k cantidad vuelo> <modo: asc/desc> <desde> <hasta>
-    Llama a la funcion ver_tablero();
-    #info_vuelo <codigo vuelo>
-    Llama a la funcion info_vuelo();
-    #prioridad_vuelos <k cantidad vuelos>
-    Llama a la funcion prioridad_vuelos();
-    #borrar <desde> <hasta>
-    Llama a la funcion borrar();
+    hash_t* hash = hash_crear(free);
+    if(!hash){
+        return 1;
+    }
 
-    */
+    hash_t* abb = abb_crear(free, funcion_comparacion);
+    if(!abb){
+        free(hash);
+        return 1;
+    }
+
+    size_t tam = 0;
+    char* linea = NULL;
+    while (getline(&linea, &tam, stdin) != -1){
+        ejecucion(linea);
+    }
+
+    return 0;
 }
