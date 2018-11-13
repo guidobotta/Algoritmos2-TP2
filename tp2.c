@@ -19,10 +19,11 @@
 //SON TODOS CHAR*, VEMOS MAS ADELANTE QUE TIPO DE DATO CONVIENE PARA CADA UNO
 //REEMPLAZAR VUELO POR FLIGHT? PASAR TODO A INGLES O A ESPAÑOL? WTF CON "TODO" JAJA
 
-typedef vuelo_heap{         //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
+typedef vuelo_resumido{         //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
     char* priority;         //clave para el hash
     char* flight_number;
-}vuelo_heap_t;
+    char* date;
+}vuelo_resumido_t;
 
 typedef struct vuelo{
     char* flight_number;
@@ -37,6 +38,16 @@ typedef struct vuelo{
     char* cancelled;
 }vuelo_t;
 
+vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
+    vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
+    if(!vuelo_resumen) return NULL;
+    vuelo_resumen->priority = vuelo->priority;
+    vuelo_resumen->flight_number = vuelo->flight_number;
+    vuelo_resumen->date = vuelo->date;
+    
+    return vuelo_resumen;
+}
+
 void destruir_vuelo(vuelo_t *vuelo){
     free(vuelo->flight_number);
     free(vuelo->airplane);
@@ -49,33 +60,34 @@ void destruir_vuelo(vuelo_t *vuelo){
     free(vuelo);
 }
 
-vuelo_t *vuelo_crear(){
+vuelo_t *vuelo_crear(char* linea){
     vuelo_t *vuelo = malloc(sizeof(vuelo_t));
     if(!vuelo) return NULL;
     //Pedir memoria para cada uno y luego asignar NULL o 0.
 
-    vuelo->flight_number = malloc(sizeof(char)*5);
+    char **cadenas = split(linea, ',');
+    vuelo->flight_number = strdup(cadenas[0]);
     if(!vuelo->flight_number) return NULL;
 
-    vuelo->airline = malloc(sizeof(char)*4);
+    vuelo->airline = strdup(cadenas[0]);
     if(!vuelo->airplane){
         free(vuelo->flight_number);
         return NULL;
     }
-    vuelo->origin_airport = malloc(sizeof(char)*4);
+    vuelo->origin_airport = strdup(cadenas[1]);
     if(!vuelo->origin_airport){
         free(vuelo->flight_number);
         free(vuelo->airplane);
         return NULL;
     }
-    vuelo->destination_airport = malloc(sizeof(char)*4);
+    vuelo->destination_airport = strdup(cadenas[2]);
     if(!vuelo->destination_airport){
         free(vuelo->flight_number);
         free(vuelo->airplane);
         free(vuelo->origin_airport);
         return NULL;
     }
-    vuelo->tail_number = malloc(sizeof(char)*10);
+    vuelo->tail_number = strdup(cadenas[3]);
     if(!vuelo->tail_number){
         free(vuelo->flight_number);
         free(vuelo->airplane);
@@ -83,7 +95,7 @@ vuelo_t *vuelo_crear(){
         free(vuelo->destination_airport);
         return NULL;
     }
-    vuelo->priority = malloc(sizeof(char)*3)
+    vuelo->priority = strdup(cadenas[4]);
     if(!vuelo->priority){
         free(vuelo->flight_number);
         free(vuelo->airplane);
@@ -92,7 +104,7 @@ vuelo_t *vuelo_crear(){
         free(vuelo->tail_number);
         return NULL;
     }
-    vuelo->date = malloc(sizeof(char)*22);
+    vuelo->date = strdup(cadenas[5]);
     if(!vuelo->date){
         free(vuelo->flight_number);
         free(vuelo->airplane);
@@ -102,7 +114,7 @@ vuelo_t *vuelo_crear(){
         free(vuelo->priority);
         return NULL;
     }
-    vuelo->departure_delay = malloc(sizeof(char)*4);
+    vuelo->departure_delay = strdup(cadenas[6]);
     if(!vuelo->departure_delay){
         free(vuelo->flight_number);
         free(vuelo->airplane);
@@ -113,7 +125,7 @@ vuelo_t *vuelo_crear(){
         free(vuelo->date);
         return NULL;
     }
-    vuelo->air_time = malloc(sizeof(char)*4);
+    vuelo->air_time = strdup(cadenas[7]);
     if(!vuelo->air_time){
         free(vuelo->flight_number);
         free(vuelo->airplane);
@@ -125,7 +137,7 @@ vuelo_t *vuelo_crear(){
         free(vuelo->departure_delay);
         return NULL;
     }
-    vuelo->cancelled = malloc(sizeof(char)*3);
+    vuelo->cancelled = strdup(cadenas[8]);
     if(!vuelo->cancelled){
         free(vuelo->flight_number);
         free(vuelo->airplane);
@@ -151,38 +163,32 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
 
     FILE* archivo = fopen(comando[1], "r");
     if(!archivo) return false;
-    vuelo_t *vuelo = vuelo_crear();
-    if(!vuelo){
-        fclose(archivo);
-        return false;
-    }
-    while(fscanf(
-        archivo,
-        FORMATO_ARCHIVO, 
-        vuelo->flight_number,
-        vuelo->airline
-        vuelo->origin_airport
-        vuelo->destination_airport
-        vuelo->tail_number
-        vuelo->priority
-        vuelo->date
-        vuelo->departure_delay
-        vuelo->air_time
-        vuelo->cancelled
-    ) == NUMERO_PARAMETROS){
+    char *linea = NULL;
+    size_t n = 0;
+    while(getline(&linea, &n, archivo)){
 
-        if(!abb_guardar(abb, vuelo->date, vuelo)){
+        vuelo_t *vuelo = vuelo_crear(linea);
+        if(!vuelo){
+            fclose(archivo);
+            return false;
+        }
+        vuelo_resumido_t *vuelo_resumen = resumir_vuelo(vuelo);
+        if(!vuelo_resumen){
+            destruir_vuelo();
+            fclose(archivo);
+            return false;
+        }
+        //Si falla alguna de estas operaciones, destruimos el abb y hash? Perderíamos los vuelos anteriores
+        if(!abb_guardar(abb, vuelo->date, vuelo_resumen)){
             destruir_vuelo(vuelo);
             fclose(archivo);
             return false;
         }
+
         if(!hash_guardar(hash, vuelo->flight_number, vuelo)){
             destruir_vuelo(vuelo);
             fclose(archivo);
             return false;
-        }
-        if(!feof(archivo)){
-            vuelo = vuelo_crear();
         }
     }
     fclose(archivo);
