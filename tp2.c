@@ -106,13 +106,14 @@ void info_vuelo(char** comando);
 // PRIORIDAD VUELOS
 ///
 
-void prioridad_vuelos(char** comando){
+void prioridad_vuelos(char** comando, hash_t* hash){
     if(!comando[1]){
         fprintf(stderr, "Error\n");
         return;
     }
 
-    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/); //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
+    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/); 
+    //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
     if (!heap){
         fprintf(stderr, "Error\n");
         return;
@@ -121,7 +122,23 @@ void prioridad_vuelos(char** comando){
     int cantidad = atoi(comando[1]);
     int contador = 0;
 
-    
+    hash_iter_t* hash_iter = hash_iter_crear(hash);
+
+    while (!hash_iter_al_final(hash_iter)){
+        if (contador < cantidad){
+            heap_encolar(heap, hash_iter_ver_actual(hash_iter));
+            contador++;
+        }
+        else if (/*LA PRIORIDAD DEL ELEMENTO ES MAYOR AL MENOR DEL HEAP*/){
+            heap_desencolar(heap);
+            heap_encolar(heap, hash_iter_ver_actual(hash_iter));
+        }
+        hash_iter_avanzar(hash_iter);
+    }
+
+
+
+    hash_iter_destruir(hash_iter);
     heap_destruir(heap);
 }
 
