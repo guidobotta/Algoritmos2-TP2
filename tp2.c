@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#define FORMATO_ARCHIVO "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^\n]\n"
+#define NUMERO_PARAMETROS 10
 
 /*
     Para cada archivo nuevo:
@@ -40,21 +42,108 @@ typedef struct vuelo{
     char* cancelled;
 }vuelo_t;
 
-vuelo_t *crear_vuelo(){
+void destruir_vuelo(vuelo_t *vuelo){
+    free(vuelo->flight_number);
+    free(vuelo->airplane);
+    free(vuelo->origin_airport);
+    free(vuelo->destination_airport);
+    free(vuelo->tail_number);
+    free(vuelo->priority);
+    free(vuelo->date);
+    free(vuelo->cancelled);
+    free(vuelo);
+}
+
+vuelo_t *vuelo_crear(){
     vuelo_t *vuelo = malloc(sizeof(vuelo_t));
     if(!vuelo) return NULL;
     //Pedir memoria para cada uno y luego asignar NULL o 0.
-    //Me parece mejor que asignemos los valores a cada campo fuera de esta funcion
-    vuelo->flight_number;
-    vuelo->airline;
-    vuelo->origin_airport;
-    vuelo->destination_airport;
-    vuelo->tail_number;
-    vuelo->priority;
-    vuelo->date;
-    vuelo->departure_delay;
-    vuelo->air_time;
-    vuelo->cancelled;
+
+    vuelo->flight_number = malloc(sizeof(char)*5);
+    if(!vuelo->flight_number) return NULL;
+
+    vuelo->airline = malloc(sizeof(char)*4);
+    if(!vuelo->airplane){
+        free(vuelo->flight_number);
+        return NULL;
+    }
+    vuelo->origin_airport = malloc(sizeof(char)*4);
+    if(!vuelo->origin_airport){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        return NULL;
+    }
+    vuelo->destination_airport = malloc(sizeof(char)*4);
+    if(!vuelo->destination_airport){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        return NULL;
+    }
+    vuelo->tail_number = malloc(sizeof(char)*10);
+    if(!vuelo->tail_number){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        free(vuelo->destination_airport);
+        return NULL;
+    }
+    vuelo->priority = malloc(sizeof(char)*3)
+    if(!vuelo->priority){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        free(vuelo->destination_airport);
+        free(vuelo->tail_number);
+        return NULL;
+    }
+    vuelo->date = malloc(sizeof(char)*22);
+    if(!vuelo->date){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        free(vuelo->destination_airport);
+        free(vuelo->tail_number);
+        free(vuelo->priority);
+        return NULL;
+    }
+    vuelo->departure_delay = malloc(sizeof(char)*4);
+    if(!vuelo->departure_delay){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        free(vuelo->destination_airport);
+        free(vuelo->tail_number);
+        free(vuelo->priority);
+        free(vuelo->date);
+        return NULL;
+    }
+    vuelo->air_time = malloc(sizeof(char)*4);
+    if(!vuelo->air_time){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        free(vuelo->destination_airport);
+        free(vuelo->tail_number);
+        free(vuelo->priority);
+        free(vuelo->date);
+        free(vuelo->departure_delay);
+        return NULL;
+    }
+    vuelo->cancelled = malloc(sizeof(char)*3);
+    if(!vuelo->cancelled){
+        free(vuelo->flight_number);
+        free(vuelo->airplane);
+        free(vuelo->origin_airport);
+        free(vuelo->destination_airport);
+        free(vuelo->tail_number);
+        free(vuelo->priority);
+        free(vuelo->date);
+        free(vuelo->departure_delay);
+        free(vuelo->air_time)
+        return NULL;
+    }
+
     return vuelo;
 }
 
@@ -62,17 +151,19 @@ vuelo_t *crear_vuelo(){
 // AGREGAR ARCHIVO
 ///
 
-void agregar_archivo(char** comando){
-    
-    FILE* archivo = fopen(nombre_archivo, "r");
-    if(!archivo){
-        fprintf(stderr, "Error\n");
-        return;
+bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
+
+
+    FILE* archivo = fopen(comando[1], "r");
+    if(!archivo) return false;
+    vuelo_t *vuelo = vuelo_crear();
+    if(!vuelo){
+        fclose(archivo);
+        return false;
     }
-    
-    fscanf(
+    while(fscanf(
         archivo,
-        FORMATO_ARCHIVO, //<--- Es una constante que tiene un char* con el formato del .csv
+        FORMATO_ARCHIVO, 
         vuelo->flight_number,
         vuelo->airline
         vuelo->origin_airport
@@ -83,16 +174,25 @@ void agregar_archivo(char** comando){
         vuelo->departure_delay
         vuelo->air_time
         vuelo->cancelled
-        );
+    ) == NUMERO_PARAMETROS){
 
-    vuelo_heap->priority = vuelo->priority;
-    vuelo_heap->flight_number = vuelo->flight_number;
-    //fscanf se encarga de meter cada valor del archivo en su correspondiente lugar.
-    hash_guardar(vuelo->flight_number, vuelo);
-    abb_guardar(vuelo->date, vuelo);
-    heap_encolar(vuelo->date, vuelo_heap);
-    //Parsear cada linea con getline o fscanf y meter dentro del struct
+        if(!abb_guardar(abb, vuelo->date, vuelo)){
+            destruir_vuelo(vuelo);
+            fclose(archivo);
+            return false;
+        }
+        if(!hash_guardar(hash, vuelo->flight_number, vuelo)){
+            destruir_vuelo(vuelo);
+            fclose(archivo);
+            return false;
+        }
+        if(!feof(archivo)){
+            vuelo = vuelo_crear();
+        }
+    }
     fclose(archivo);
+
+    return true;
 }
 
 ///
@@ -122,12 +222,13 @@ int priority_comp(const priority_heap_t* vuelo_1, const priority_heap_t* vuelo_2
 }
 
 void prioridad_vuelos(char** comando, hash_t* hash){
+
     if(!comando[1]){
         fprintf(stderr, "Error\n");
         return;
     }
 
-    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/); 
+    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/);
     //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
     if (!heap){
         fprintf(stderr, "Error\n");
@@ -187,18 +288,24 @@ void borrar(char** comando);
 // EJECUTADOR
 ///
 
-void ejecucion(char* linea, hash_t* hash, abb_t* abb){
+bool ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
-    if (!strcmp(comando[0], "agregar_archivo")) agregar_archivo(comando); //EJECUTAR AGREGAR_ARCHIVO
-    else if (!strcmp(comando[0], "ver_tablero")) ver_tablero(comando); //EJECUTAR VER_TABLERO
-    else if (!strcmp(comando[0], "info_vuelo")) info_vuelo(comando); //EJECUTAR INFO_VUELO
-    else if (!strcmp(comando[0], "prioridad_vuelos")) prioridad_vuelos(comando, hash); //EJECUTAR PRIORIDAD_VUELOS
-    else if (!strcmp(comando[0], "borrar")) borrar(comando); //EJECUTAR BORRAR
-    else {
-        fprintf(stderr, "Error");
-        return;
+    if (!strcmp(comando[0], "agregar_archivo")){
+        if(!agregar_archivo(comando, hash, abb)) return false; //EJECUTAR AGREGAR_ARCHIVO
     }
-    printf("OK\n");
+    else if (!strcmp(comando[0], "ver_tablero")){
+        if(!ver_tablero(comando)) return false; //EJECUTAR VER_TABLERO
+    }
+    else if (!strcmp(comando[0], "info_vuelo")){
+        if(!info_vuelo(comando)) return false; //EJECUTAR INFO_VUELO
+    }
+    else if (!strcmp(comando[0], "prioridad_vuelos")){
+        if(!prioridad_vuelos(comando, hash)) return false; //EJECUTAR PRIORIDAD_VUELOS
+    }
+    else if (!strcmp(comando[0], "borrar")){
+        if(!borrar(comando)) return false; //EJECUTAR BORRAR
+    }
+    return true;
 }
 
 /*
@@ -231,7 +338,11 @@ int main(){
     size_t tam = 0;
     char* linea = NULL;
     while (getline(&linea, &tam, stdin) != -1){
-        ejecucion(linea, hash, abb);
+        if(!ejecucion(linea, hash, abb)){
+            fprintf(stderr, "\nError\n");
+        }else{
+            printf("\nOK\n");
+        }
     }
 
     return 0;
