@@ -52,12 +52,17 @@ vuelo_t *crear_vuelo(){
     return vuelo;
 }
 
-bool agregar_archivo(char* nombre_archivo){
+///
+// AGREGAR ARCHIVO
+///
+
+void agregar_archivo(char** comando){
     
     FILE* archivo = fopen(nombre_archivo, "r");
     if(!archivo) return false;
     
-    fscanf(archivo,
+    fscanf(
+        archivo,
         FORMATO_ARCHIVO, //<--- Es una constante que tiene un char* con el formato del .csv
         vuelo->flight_number,
         vuelo->airline
@@ -68,7 +73,8 @@ bool agregar_archivo(char* nombre_archivo){
         vuelo->date
         vuelo->departure_delay
         vuelo->air_time
-        vuelo->cancelled);
+        vuelo->cancelled
+        );
 
     vuelo_heap->priority = vuelo->priority;
     vuelo_heap->flight_number = vuelo->flight_number;
@@ -81,15 +87,49 @@ bool agregar_archivo(char* nombre_archivo){
 }
 
 ///
-// EJECUTA LA OPERACIÓN
+// VER TABLERO
 ///
+
+void ver_tablero(char** comando);
+
+///
+// INFO VUELO
+///
+
+void info_vuelo(char** comando);
+
+///
+// PRIORIDAD VUELOS
+///
+
+void prioridad_vuelos(char** comando);
+
+///
+// BORRAR
+///
+
+void borrar(char** comando){
+    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/); //Debe ser un Heap de Mínimos...
+    if (!heap){
+        fprintf(stderr, "Error");
+        return;
+    }
+
+
+}
+
+///
+// EJECUTADOR
+///
+
 void ejecucion(char* linea){
     char** comando = split(linea, ' ');
-    if (!strcmp(comando[0], "agregar_archivo")); //EJECUTAR AGREGAR_ARCHIVO
-    else if (!strcmp(comando[0], "ver_tablero")); //EJECUTAR VER_TABLERO
-    else if (!strcmp(comando[0], "info_vuelo")); //EJECUTAR INFO_VUELO
-    else if (!strcmp(comando[0], "prioridad_vuelos")); //EJECUTAR PRIORIDAD_VUELOS
-    else if (!strcmp(comando[0], "borrar")); //EJECUTAR BORRAR
+    if (!strcmp(comando[0], "agregar_archivo")) agregar_archivo(comando); //EJECUTAR AGREGAR_ARCHIVO
+    else if (!strcmp(comando[0], "ver_tablero")) ver_tablero(comando); //EJECUTAR VER_TABLERO
+    else if (!strcmp(comando[0], "info_vuelo")) info_vuelo(comando); //EJECUTAR INFO_VUELO
+    else if (!strcmp(comando[0], "prioridad_vuelos")) prioridad_vuelos(comando); //EJECUTAR PRIORIDAD_VUELOS
+    else if (!strcmp(comando[0], "borrar")) borrar(comando); //EJECUTAR BORRAR
+    else fprintf(stderr, "Error");
 }
 
 /*
