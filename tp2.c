@@ -4,6 +4,7 @@
 #include "strutil.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 /*
@@ -59,7 +60,10 @@ vuelo_t *crear_vuelo(){
 void agregar_archivo(char** comando){
     
     FILE* archivo = fopen(nombre_archivo, "r");
-    if(!archivo) return false;
+    if(!archivo){
+        fprintf(stderr, "Error\n");
+        return;
+    }
     
     fscanf(
         archivo,
@@ -102,34 +106,47 @@ void info_vuelo(char** comando);
 // PRIORIDAD VUELOS
 ///
 
-void prioridad_vuelos(char** comando);
+void prioridad_vuelos(char** comando){
+    if(!comando[1]){
+        fprintf(stderr, "Error\n");
+        return;
+    }
+
+    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/); //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
+    if (!heap){
+        fprintf(stderr, "Error\n");
+        return;
+    }
+
+    int cantidad = atoi(comando[1]);
+    int contador = 0;
+
+    
+    heap_destruir(heap);
+}
 
 ///
 // BORRAR
 ///
 
-void borrar(char** comando){
-    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/); //Debe ser un Heap de Mínimos...
-    if (!heap){
-        fprintf(stderr, "Error");
-        return;
-    }
-
-
-}
+void borrar(char** comando);
 
 ///
 // EJECUTADOR
 ///
 
-void ejecucion(char* linea){
+void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
     if (!strcmp(comando[0], "agregar_archivo")) agregar_archivo(comando); //EJECUTAR AGREGAR_ARCHIVO
     else if (!strcmp(comando[0], "ver_tablero")) ver_tablero(comando); //EJECUTAR VER_TABLERO
     else if (!strcmp(comando[0], "info_vuelo")) info_vuelo(comando); //EJECUTAR INFO_VUELO
-    else if (!strcmp(comando[0], "prioridad_vuelos")) prioridad_vuelos(comando); //EJECUTAR PRIORIDAD_VUELOS
+    else if (!strcmp(comando[0], "prioridad_vuelos")) prioridad_vuelos(comando, hash); //EJECUTAR PRIORIDAD_VUELOS
     else if (!strcmp(comando[0], "borrar")) borrar(comando); //EJECUTAR BORRAR
-    else fprintf(stderr, "Error");
+    else {
+        fprintf(stderr, "Error");
+        return;
+    }
+    printf("OK\n");
 }
 
 /*
@@ -162,7 +179,7 @@ int main(){
     size_t tam = 0;
     char* linea = NULL;
     while (getline(&linea, &tam, stdin) != -1){
-        ejecucion(linea);
+        ejecucion(linea, hash, abb);
     }
 
     return 0;
