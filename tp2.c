@@ -1,6 +1,7 @@
 #include "heap.h"
 #include "hash.h"
 #include "abb.h"
+#include "lista.h"
 #include "strutil.h"
 
 #include <stdio.h>
@@ -19,11 +20,24 @@
 //SON TODOS CHAR*, VEMOS MAS ADELANTE QUE TIPO DE DATO CONVIENE PARA CADA UNO
 //REEMPLAZAR VUELO POR FLIGHT? PASAR TODO A INGLES O A ESPAÑOL? WTF CON "TODO" JAJA
 
+<<<<<<< HEAD
 typedef vuelo_resumido{         //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
     char* priority;         //clave para el hash
     char* flight_number;
     char* date;
 }vuelo_resumido_t;
+
+=======
+
+typedef priority_heap{   //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
+    char* priority;      //clave para el hash
+    char* flight_number;
+}priority_heap_t;
+
+priority_heap_t* crear_priority_heap(char* priority, char* flight_number){
+    priority_heap_t* prior_heap
+}
+>>>>>>> a2bacdc2338ebb218ef5f5e01d7c0cab68081155
 
 typedef struct vuelo{
     char* flight_number;
@@ -44,7 +58,7 @@ vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
     vuelo_resumen->priority = vuelo->priority;
     vuelo_resumen->flight_number = vuelo->flight_number;
     vuelo_resumen->date = vuelo->date;
-    
+
     return vuelo_resumen;
 }
 
@@ -212,6 +226,16 @@ void info_vuelo(char** comando);
 // PRIORIDAD VUELOS
 ///
 
+int priority_comp(const priority_heap_t* vuelo_1, const priority_heap_t* vuelo_2){
+    if (atoi(vuelo_1->priority) > atoi(vuelo_2->priority)) return ;
+    else if (atoi(vuelo_1->priority) < atoi(vuelo_2->priority)) return ;
+
+    else if (atoi(vuelo_1->flight_number) > atoi(vuelo_2->flight_number)) return ;
+    else if (atoi(vuelo_1->flight_number) < atoi(vuelo_2->flight_number)) return ;
+
+    return 0;
+}
+
 void prioridad_vuelos(char** comando, hash_t* hash){
 
     if(!comando[1]){
@@ -230,6 +254,11 @@ void prioridad_vuelos(char** comando, hash_t* hash){
     int contador = 0;
 
     hash_iter_t* hash_iter = hash_iter_crear(hash);
+    if (!hash_iter){
+        heap_destruir(heap);
+        fprintf(stderr, "Error\n");
+        return;
+    }
 
     while (!hash_iter_al_final(hash_iter)){
         if (contador < cantidad){
@@ -241,6 +270,23 @@ void prioridad_vuelos(char** comando, hash_t* hash){
             heap_encolar(heap, hash_iter_ver_actual(hash_iter));
         }
         hash_iter_avanzar(hash_iter);
+    }
+
+    lista_t* lista = lista_crear();
+    if(!lista){
+        hash_iter_destruir(hash_iter);
+        heap_destruir(heap);
+        fprintf(stderr, "Error\n");
+        return;
+    }
+
+    while(!heap_esta_vacio(heap)){
+        lista_insertar_primero(lista, heap_desencolar(heap));
+    }
+
+    while(!lista_esta_vacia(lista)){
+        char* clave = (char*)lista_borrar_primero(lista);
+        printf("%s - %s", hash_obtener(hash, clave)->priority, hash_obtener(hash, clave)->flight_number);
     }
 
     hash_iter_destruir(hash_iter);
