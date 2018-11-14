@@ -53,9 +53,9 @@ vuelo_resumen_t *crear_vuelo_resumen(vuelo_t* vuelo){
     vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
     if(!vuelo_resumen) return NULL;
 
-    vuelo_resumen->priority = strdup(vuelo->priority);
-    vuelo_resumen->flight_number = strdup(vuelo->flight_number);
-    vuelo_resumen->date = strdup(vuelo->date);
+    vuelo_resumen->priority = vuelo->priority;
+    vuelo_resumen->flight_number = vuelo->flight_number;
+    vuelo_resumen->date = vuelo->date;
 
     return vuelo_resumen;
 }
@@ -66,14 +66,6 @@ void imprimir_vuelo(vuelo_t* vuelo){
     printf("%s %s %s %s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport,
     vuelo->destination_airport, vuelo->tail_number, vuelo->priority, vuelo->date, vuelo->departure_delay,
     vuelo->air_time, vuelo->cancelled);
-}
-
-void destruir_vuelo_resumen(void* vuelo){
-    vuelo_resumen_t* vuelo_resumen = vuelo;
-    free(vuelo_resumen->priority);
-    free(vuelo_resumen->flight_number);
-    free(vuelo_resumen->date);
-    free(vuelo_resumen);
 }
 
 void destruir_vuelo(void* _vuelo_){
@@ -203,7 +195,7 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
     size_t n = 0;
     int leidos = 0;
     while((leidos = (int)getline(&linea, &n, archivo)) !=-1){
-        linea[leidos-1] = '\0';
+        if (linea[leidos-1] == '\n') linea[leidos-1] = '\0';
         vuelo_t *vuelo = vuelo_crear(linea);
         if(!vuelo){
             fclose(archivo);
@@ -389,11 +381,11 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
             heap_encolar(heap, vuelo_heap);
             contador++;
         }
-        else if (priority_comp(vuelo_heap, (vuelo_t*)hash_iter_ver_actual(hash_iter)) < 0){
+        else if (priority_comp(vuelo_heap, (vuelo_resumen_t*)heap_ver_max(heap)) < 0){
             free(heap_desencolar(heap));
             heap_encolar(heap, vuelo_heap);
         }
-        //else free(vuelo_heap);
+        else free(vuelo_heap);
         hash_iter_avanzar(hash_iter);
     }
 
@@ -404,6 +396,7 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     while(!lista_esta_vacia(lista)){
         vuelo_resumen_t* vuelo_actual = (vuelo_resumen_t*)lista_borrar_primero(lista);
         printf("%s - %s\n", vuelo_actual->priority, vuelo_actual->flight_number);
+        free(vuelo_actual);
     }
 
     hash_iter_destruir(hash_iter);
@@ -427,7 +420,7 @@ void borrar_e_imprimir_elementos(vuelo_resumen_t **vector, int tope, abb_t* abb,
         vuelo_completo = hash_borrar(hash, vuelo_resumen->date);
         imprimir_vuelo(vuelo_completo);
         destruir_vuelo(vuelo_completo);
-        destruir_vuelo_resumen(vuelo_resumen);  //Ver si es necesario.
+        free(vuelo_resumen);  //Ver si es necesario.
         //free(vuelo_resumen);//Esto depende de la linea anterior, ver si es necesario.
     }
 
@@ -514,7 +507,7 @@ int main(){
         return 1;
     }
 
-    abb_t* abb = abb_crear(date_comp, destruir_vuelo_resumen);
+    abb_t* abb = abb_crear(date_comp, free);
     if(!abb){
         free(hash);
         return 1;
@@ -524,7 +517,7 @@ int main(){
     char* linea = NULL;
     int leidos = 0;
     while ((leidos = (int)getline(&linea, &tam, stdin)) != -1){
-        linea[leidos-1] = '\0';
+        if (linea[leidos-1] == '\n') linea[leidos-1] = '\0';
         ejecucion(linea, hash, abb);
     }
 
