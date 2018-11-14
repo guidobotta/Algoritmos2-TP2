@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L //Sino falla strdup
 #include "heap.h"
 #include "hash.h"
 #include "abb.h"
@@ -7,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #define FORMATO_ARCHIVO "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^\n]\n"
 #define NUMERO_PARAMETROS 10
 
@@ -88,58 +90,60 @@ vuelo_t *vuelo_crear(char* linea){
     //Pedir memoria para cada uno y luego asignar NULL o 0.
 
     char **cadenas = split(linea, ',');
+    if (!cadenas) return NULL;
+
     vuelo->flight_number = strdup(cadenas[0]);
     if(!vuelo->flight_number) return NULL;
 
-    vuelo->airline = strdup(cadenas[0]);
-    if(!vuelo->airplane){
+    vuelo->airline = strdup(cadenas[1]);
+    if(!vuelo->airline){
         free(vuelo->flight_number);
         return NULL;
     }
-    vuelo->origin_airport = strdup(cadenas[1]);
+    vuelo->origin_airport = strdup(cadenas[2]);
     if(!vuelo->origin_airport){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         return NULL;
     }
-    vuelo->destination_airport = strdup(cadenas[2]);
+    vuelo->destination_airport = strdup(cadenas[3]);
     if(!vuelo->destination_airport){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         return NULL;
     }
-    vuelo->tail_number = strdup(cadenas[3]);
+    vuelo->tail_number = strdup(cadenas[4]);
     if(!vuelo->tail_number){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         free(vuelo->destination_airport);
         return NULL;
     }
-    vuelo->priority = strdup(cadenas[4]);
+    vuelo->priority = strdup(cadenas[5]);
     if(!vuelo->priority){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         free(vuelo->destination_airport);
         free(vuelo->tail_number);
         return NULL;
     }
-    vuelo->date = strdup(cadenas[5]);
+    vuelo->date = strdup(cadenas[6]);
     if(!vuelo->date){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         free(vuelo->destination_airport);
         free(vuelo->tail_number);
         free(vuelo->priority);
         return NULL;
     }
-    vuelo->departure_delay = strdup(cadenas[6]);
+    vuelo->departure_delay = strdup(cadenas[7]);
     if(!vuelo->departure_delay){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         free(vuelo->destination_airport);
         free(vuelo->tail_number);
@@ -147,10 +151,10 @@ vuelo_t *vuelo_crear(char* linea){
         free(vuelo->date);
         return NULL;
     }
-    vuelo->air_time = strdup(cadenas[7]);
+    vuelo->air_time = strdup(cadenas[8]);
     if(!vuelo->air_time){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         free(vuelo->destination_airport);
         free(vuelo->tail_number);
@@ -159,17 +163,17 @@ vuelo_t *vuelo_crear(char* linea){
         free(vuelo->departure_delay);
         return NULL;
     }
-    vuelo->cancelled = strdup(cadenas[8]);
+    vuelo->cancelled = strdup(cadenas[9]);
     if(!vuelo->cancelled){
         free(vuelo->flight_number);
-        free(vuelo->airplane);
+        free(vuelo->airline);
         free(vuelo->origin_airport);
         free(vuelo->destination_airport);
         free(vuelo->tail_number);
         free(vuelo->priority);
         free(vuelo->date);
         free(vuelo->departure_delay);
-        free(vuelo->air_time)
+        free(vuelo->air_time);
         return NULL;
     }
 
@@ -198,9 +202,9 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
             fclose(archivo);
             return false;
         }
-        vuelo_resumido_t *vuelo_resumen = resumir_vuelo(vuelo);
+        vuelo_resumen_t *vuelo_resumen = resumir_vuelo(vuelo);
         if(!vuelo_resumen){
-            destruir_vuelo();
+            destruir_vuelo(vuelo);
             fclose(archivo);
             return false;
         }
@@ -232,13 +236,13 @@ int date_comp(const vuelo_resumen_t* vuelo_1, const vuelo_resumen_t* vuelo_2){
     return 0;
 }
 
-void armar_lista(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos){
+lista_t* armar_lista(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos){
     lista_t* lista = lista_crear();
     vuelo_resumen_t* vuelo = NULL;
     if(!lista) return;
     int i=0;
     while(!abb_iter_in_al_final(iter) && i < cantidad_vuelos){
-        vuelo = abb_iter_in_ver_actual(iter);
+        vuelo = (vuelo_resumen_t*)abb_iter_in_ver_actual(iter);
         if(strcmp(vuelo->date, fecha_final) > 0) break;
         lista_insertar_ultimo(lista, vuelo);
         i++;
@@ -247,7 +251,7 @@ void armar_lista(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos){
 }
 
 void imprimir_lista(lista_t *lista, char* modo){
-    bool ascendence = !strcmp(modo, "asc");
+    bool ascendente = !strcmp(modo, "asc");
     vuelo_resumen_t *vuelo = NULL;
     while(!lista_esta_vacia(lista)){
         if(ascendente){
@@ -284,7 +288,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         free_strv(comando);
         return false;
     }
-    lista_t *lista = armar_lista(iter, fecha_final);
+    lista_t *lista = armar_lista(iter, fecha_final, cantidad_vuelos);
     if(!lista){
         free_strv(comando);
         abb_iter_in_destruir(iter);
@@ -292,7 +296,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     }
     imprimir_lista(lista, modo);
 
-    lista_destruir(lista);
+    lista_destruir(lista, NULL);
     abb_iter_in_destruir(iter);
     free_strv(comando);
     return true;
@@ -343,14 +347,14 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
 
     hash_iter_t* hash_iter = hash_iter_crear(hash);
     if (!hash_iter){
-        heap_destruir(heap);
+        heap_destruir(heap, NULL);
         return false;
     }
 
     lista_t* lista = lista_crear();
     if(!lista){
         hash_iter_destruir(hash_iter);
-        heap_destruir(heap);
+        heap_destruir(heap, NULL);
         return false;
     }
 
@@ -378,7 +382,7 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     }
 
     hash_iter_destruir(hash_iter);
-    heap_destruir(heap);
+    heap_destruir(heap, NULL);
     lista_destruir(lista, NULL);
 
     return true;
@@ -402,10 +406,10 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
     bool exito = true;
     if (!strcmp(comando[0], "agregar_archivo")){
-        exito = agregar_archivo(comando, hash, abb)); //EJECUTAR AGREGAR_ARCHIVO
+        exito = agregar_archivo(comando, hash, abb); //EJECUTAR AGREGAR_ARCHIVO
     }
     else if (!strcmp(comando[0], "ver_tablero")){
-        exito = ver_tablero(comando, hash, abb)); //EJECUTAR VER_TABLERO
+        exito = ver_tablero(comando, hash, abb); //EJECUTAR VER_TABLERO
     }
     else if (!strcmp(comando[0], "info_vuelo")){
         exito = info_vuelo(comando, hash); //EJECUTAR INFO_VUELO
@@ -444,7 +448,7 @@ int main(){
         return 1;
     }
 
-    hash_t* abb = abb_crear(free, funcion_comparacion);
+    abb_t* abb = abb_crear(/*funcion_comparacion*/, free);
     if(!abb){
         free(hash);
         return 1;
