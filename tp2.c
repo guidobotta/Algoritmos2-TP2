@@ -49,7 +49,7 @@ typedef struct vuelo{
  *                     FUNCIONES AUXILIARES
  * *****************************************************************/
 
-vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
+vuelo_resumen_t *crear_vuelo_resumen(vuelo_t* vuelo){
     vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
     if(!vuelo_resumen) return NULL;
 
@@ -207,7 +207,7 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
             fclose(archivo);
             return false;
         }
-        vuelo_resumen_t *vuelo_resumen = resumir_vuelo(vuelo);
+        vuelo_resumen_t *vuelo_resumen = crear_vuelo_resumen(vuelo);
         if(!vuelo_resumen){
             destruir_vuelo(vuelo);
             fclose(archivo);
@@ -381,7 +381,8 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     }
 
     while (!hash_iter_al_final(hash_iter)){
-        vuelo_resumen_t* vuelo_heap = resumir_vuelo((vuelo_t*)hash_iter_ver_actual(hash_iter));
+        const char* clave_vuelo = hash_iter_ver_actual(hash_iter);
+        vuelo_resumen_t* vuelo_heap = crear_vuelo_resumen((vuelo_t*)hash_obtener(hash, clave_vuelo));
         if (contador < cantidad){
             heap_encolar(heap, vuelo_heap);
             contador++;
@@ -390,7 +391,7 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
             free(heap_desencolar(heap));
             heap_encolar(heap, vuelo_heap);
         }
-        else free(vuelo_heap);
+        //else free(vuelo_heap);
         hash_iter_avanzar(hash_iter);
     }
 
@@ -524,5 +525,14 @@ int main(){
         linea[leidos-1] = '\0';
         ejecucion(linea, hash, abb);
     }
+
+    free(linea);
+    hash_destruir(hash);
+    abb_destruir(abb);
     return 0;
 }
+
+/* 
+FALTA CHEQUEAR QUE LOS COMANDOS QUE PASEN SEAN CORRECTOR
+POR EJEMPLO QUE LOS NUMEROS SEAN NUMEROS ANTES DE CONVERTIRLOS
+*/
