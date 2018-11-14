@@ -25,8 +25,8 @@
  * *****************************************************************/
 
 //Estructura auxiliar para usar en Heap y Abb
-typedef struct vuelo_resumido{     
-    char* priority;                
+typedef struct vuelo_resumido{
+    char* priority;
     char* flight_number;
     char* date;
 }vuelo_resumen_t;
@@ -173,7 +173,7 @@ vuelo_t *vuelo_crear(char* linea){
         return NULL;
     }
 
-    freestrv(cadenas);
+    free_strv(cadenas);
     return vuelo;
 }
 
@@ -232,7 +232,69 @@ int date_comp(const vuelo_resumen_t* vuelo_1, const vuelo_resumen_t* vuelo_2){
     return 0;
 }
 
+void armar_lista(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos){
+    lista_t* lista = lista_crear();
+    vuelo_resumen_t* vuelo = NULL;
+    if(!lista) return;
+    int i=0;
+    while(!abb_iter_in_al_final(iter) && i < cantidad_vuelos){
+        vuelo = abb_iter_in_ver_actual(iter);
+        if(strcmp(vuelo->date, fecha_final) > 0) break;
+        lista_insertar_ultimo(lista, vuelo);
+        i++;
+    }
+    return lista;
+}
+
+void imprimir_lista(lista_t *lista, char* modo){
+    bool ascendence = !strcmp(modo, "asc");
+    vuelo_resumen_t *vuelo = NULL;
+    while(!lista_esta_vacia(lista)){
+        if(ascendente){
+            vuelo = lista_borrar_primero(lista);
+        }else{
+            vuelo = lista_borrar_ultimo(lista);
+        }
+        printf("\n%s - %s", vuelo->date, vuelo->flight_number);
+    }
+}
+
 bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
+    //ver_tablero <K cantidad vuelos> <modo: asc/desc> <desde> <hasta>
+
+    int cantidad_vuelos = atoi(comando[1]);
+    if(cantidad_vuelos <= 0){
+        free_strv(comando);
+        return false;
+    }
+    char* modo = comando[2];
+    if(strcmp(modo, "asc") && strcmp(modo, "desc")){
+        free_strv(comando);
+        return false;
+    }
+    char* fecha_inicial = comando[3];
+    char* fecha_final = comando[4];
+    if(comparar_fechas(fecha_inicial, fecha_final) > 0){
+        free_strv(comando);
+        return false;
+    }
+
+    abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
+    if(!iter){
+        free_strv(comando);
+        return false;
+    }
+    lista_t *lista = armar_lista(iter, fecha_final);
+    if(!lista){
+        free_strv(comando);
+        abb_iter_in_destruir(iter);
+        return false;
+    }
+    imprimir_lista(lista, modo);
+
+    lista_destruir(lista);
+    abb_iter_in_destruir(iter);
+    free_strv(comando);
     return true;
 }
 
@@ -246,7 +308,7 @@ bool info_vuelo(char** comando, hash_t* hash){
 
     if(hash_pertenece(hash, comando[1])){
         vuelo_t* vuelo = hash_obtener(hash, comando[1]);
-        printf("%s %s %s %s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport, 
+        printf("%s %s %s %s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport,
         vuelo->destination_airport, vuelo->tail_number, vuelo->priority, vuelo->date, vuelo->departure_delay,
         vuelo->air_time, vuelo->cancelled);
     }else return false;
@@ -289,7 +351,7 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     if(!lista){
         hash_iter_destruir(hash_iter);
         heap_destruir(heap);
-        return false; 
+        return false;
     }
 
     while (!hash_iter_al_final(hash_iter)){
