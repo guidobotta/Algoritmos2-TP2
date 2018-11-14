@@ -258,7 +258,7 @@ vuelo_resumen_t** armar_vector(abb_iter_t* iter, abb_t* abb, char* fecha_final, 
 
     vuelo_resumen_t* vuelo = NULL;
     //int i=0;
-    while(!abb_iter_in_al_final(iter) && (*tope) < cantidad_vuelos){
+    while(!abb_iter_in_al_final(iter) && ((*tope) < cantidad_vuelos || cantidad_vuelos == -1)){
         vuelo = abb_obtener(abb, abb_iter_in_ver_actual(iter));
         if(date_comp(vuelo->date, fecha_final) > 0) break;
         vuelos[(*tope)] = vuelo;
@@ -272,11 +272,11 @@ void imprimir_vector(vuelo_resumen_t **vuelos, char* modo, int tope){
     bool ascendente = !strcmp(modo, "asc");
     if(ascendente){
         for(int i=0; i<tope; i++){
-            printf("\n%s - %s", vuelos[i]->date, vuelos[i]->flight_number);
+            printf("%s - %s\n", vuelos[i]->date, vuelos[i]->flight_number);
         }
     }else{
         for(int i=tope-1; i>=0; i--){
-            printf("\n%s - %s", vuelos[i]->date, vuelos[i]->flight_number);
+            printf("%s - %s\n", vuelos[i]->date, vuelos[i]->flight_number);
         }
     }
 }
@@ -474,7 +474,7 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     else exito = false;
 
     if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
-    else printf("\nOK\n");
+    else printf("OK\n");
 
     free_strv(comando);
 }
