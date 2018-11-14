@@ -199,8 +199,9 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
     if(!archivo) return false;
     char *linea = NULL;
     size_t n = 0;
-    while(getline(&linea, &n, archivo)){
-
+    int leidos = 0;
+    while((leidos = (int)getline(&linea, &n, archivo)) !=-1){
+        linea[leidos-1] = '\0';
         vuelo_t *vuelo = vuelo_crear(linea);
         if(!vuelo){
             fclose(archivo);
@@ -362,7 +363,7 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     heap_t* heap = heap_crear(priority_comp);
     //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
     if (!heap) return false;
-    
+
     int cantidad = atoi(comando[1]);
     int contador = 0;
 
@@ -465,7 +466,7 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
 void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
     bool exito = true;
-    
+
     if (!strcmp(comando[0], "agregar_archivo")){
         exito = agregar_archivo(comando, hash, abb); //EJECUTAR AGREGAR_ARCHIVO
     }
@@ -518,7 +519,9 @@ int main(){
 
     size_t tam = 0;
     char* linea = NULL;
-    while (getline(&linea, &tam, stdin) != -1){
+    int leidos = 0;
+    while ((leidos = (int)getline(&linea, &tam, stdin)) != -1){
+        linea[leidos-1] = '\0';
         ejecucion(linea, hash, abb);
     }
     return 0;
