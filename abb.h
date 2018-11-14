@@ -66,5 +66,7 @@ bool abb_iter_in_al_final(const abb_iter_t *iter);
 //
 void abb_iter_in_destruir(abb_iter_t* iter);
 
+abb_iter_t* abb_buscar_clave_e_iterar(abb_t* arbol, const char* clave);
+
 
 #endif // ABB_H

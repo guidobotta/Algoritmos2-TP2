@@ -62,6 +62,14 @@ vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
     return vuelo_resumen;
 }
 
+//Quizás esta funcion no es necesaria
+void destruir_vuelo_resumen(vuelo_resumen_t* vuelo_resumen){
+    free(vuelo_resumen->priority);
+    free(vuelo_resumen->flight_number);
+    free(vuelo_resumen->date);
+    free(vuelo_resumen);
+}
+
 void destruir_vuelo(vuelo_t *vuelo){
     free(vuelo->flight_number);
     free(vuelo->airplane);

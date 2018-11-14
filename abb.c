@@ -254,3 +254,36 @@ void abb_iter_in_destruir(abb_iter_t* iter){
     pila_destruir(iter->pila);
     free(iter);
 }
+
+void buscar_hijo_iter(abb_nodo_t* actual, abb_nodo_t** padre, const char* clave, abb_comparar_clave_t cmp, pila_t* pila){
+    if(!actual) return NULL;
+    int comp = cmp(actual->clave, clave);
+    if(comp >= 0){
+        pila_apilar(pila, actual);
+    }
+
+    if(!comp) return;
+
+    *padre = actual;
+    if(comp < 0) return buscar_hijo_iter(actual->der, padre, clave, cmp);
+    return buscar_hijo_iter(actual->izq, padre, clave, cmp);
+}
+
+abb_iter_t* abb_buscar_clave_e_iterar(abb_t* arbol, const char* clave){
+    pila_t *pila = pila_crear();
+    if(!pila) return NULL;
+    buscar_hijo_iter(arbol->raiz, padre, clave, abb->cmp, pila);
+    if(pila_esta_vacia(pila)){
+        pila_destruir(pila);
+        return NULL;
+    }
+    abb_iter_t* iter = malloc(sizeof(abb_iter_t*));
+    if(!iter){
+        pila_destruir(pila);
+        return NULL;
+    }
+    iter->arbol = arbol;
+    iter->pila = pila;
+    
+    return iter;
+}
