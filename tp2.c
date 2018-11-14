@@ -20,24 +20,11 @@
 //SON TODOS CHAR*, VEMOS MAS ADELANTE QUE TIPO DE DATO CONVIENE PARA CADA UNO
 //REEMPLAZAR VUELO POR FLIGHT? PASAR TODO A INGLES O A ESPAÑOL? WTF CON "TODO" JAJA
 
-<<<<<<< HEAD
 typedef vuelo_resumido{         //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
     char* priority;         //clave para el hash
     char* flight_number;
     char* date;
-}vuelo_resumido_t;
-
-=======
-
-typedef priority_heap{   //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
-    char* priority;      //clave para el hash
-    char* flight_number;
-}priority_heap_t;
-
-priority_heap_t* crear_priority_heap(char* priority, char* flight_number){
-    priority_heap_t* prior_heap
-}
->>>>>>> a2bacdc2338ebb218ef5f5e01d7c0cab68081155
+}vuelo_resumen_t;
 
 typedef struct vuelo{
     char* flight_number;
@@ -55,6 +42,7 @@ typedef struct vuelo{
 vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
     vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
     if(!vuelo_resumen) return NULL;
+
     vuelo_resumen->priority = vuelo->priority;
     vuelo_resumen->flight_number = vuelo->flight_number;
     vuelo_resumen->date = vuelo->date;
@@ -220,35 +208,41 @@ void ver_tablero(char** comando);
 // INFO VUELO
 ///
 
-void info_vuelo(char** comando);
+bool info_vuelo(char** comando, hash_t* hash){
+
+    if(!comando[1]) return false;
+
+    if(hash_pertenece(hash, comando[1])){
+        vuelo_t* vuelo = hash_obtener(hash, comando[1]);
+        printf("%s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport, 
+        vuelo->destination_airport, vuelo->tail_number, vuelo->priority, vuelo->date, vuelo->departure_delay,
+        vuelo->air_time, vuelo->cancelled);
+    }else return false;
+
+    return true;
+}
 
 ///
 // PRIORIDAD VUELOS
 ///
 
-int priority_comp(const priority_heap_t* vuelo_1, const priority_heap_t* vuelo_2){
-    if (atoi(vuelo_1->priority) > atoi(vuelo_2->priority)) return ;
-    else if (atoi(vuelo_1->priority) < atoi(vuelo_2->priority)) return ;
+int priority_comp(const vuelo_resumen_t* vuelo_1, const vuelo_resumen_t* vuelo_2){
+    if (atoi(vuelo_1->priority) > atoi(vuelo_2->priority)) return -1;
+    else if (atoi(vuelo_1->priority) < atoi(vuelo_2->priority)) return 1;
 
-    else if (atoi(vuelo_1->flight_number) > atoi(vuelo_2->flight_number)) return ;
-    else if (atoi(vuelo_1->flight_number) < atoi(vuelo_2->flight_number)) return ;
+    else if (atoi(vuelo_1->flight_number) > atoi(vuelo_2->flight_number)) return -1;
+    else if (atoi(vuelo_1->flight_number) < atoi(vuelo_2->flight_number)) return 1;
 
     return 0;
 }
 
-void prioridad_vuelos(char** comando, hash_t* hash){
+bool prioridad_vuelos(char** comando, hash_t* hash){
 
-    if(!comando[1]){
-        fprintf(stderr, "Error\n");
-        return;
-    }
+    if(!comando[1]) return false;
 
-    heap_t* heap = heap_crear(/*!!FUNCION DE COMPARACIÓN DE FECHAS Y CODIGO DE VUELO¡¡*/);
+    heap_t* heap = heap_crear(priority_comp);
     //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
-    if (!heap){
-        fprintf(stderr, "Error\n");
-        return;
-    }
+    if (!heap) return false;
 
     int cantidad = atoi(comando[1]);
     int contador = 0;
@@ -256,28 +250,28 @@ void prioridad_vuelos(char** comando, hash_t* hash){
     hash_iter_t* hash_iter = hash_iter_crear(hash);
     if (!hash_iter){
         heap_destruir(heap);
-        fprintf(stderr, "Error\n");
-        return;
-    }
-
-    while (!hash_iter_al_final(hash_iter)){
-        if (contador < cantidad){
-            heap_encolar(heap, hash_iter_ver_actual(hash_iter));
-            contador++;
-        }
-        else if (/*LA PRIORIDAD DEL ELEMENTO ES MAYOR AL MENOR DEL HEAP*/){
-            heap_desencolar(heap);
-            heap_encolar(heap, hash_iter_ver_actual(hash_iter));
-        }
-        hash_iter_avanzar(hash_iter);
+        return false;
     }
 
     lista_t* lista = lista_crear();
     if(!lista){
         hash_iter_destruir(hash_iter);
         heap_destruir(heap);
-        fprintf(stderr, "Error\n");
-        return;
+        return false; 
+    }
+
+    while (!hash_iter_al_final(hash_iter)){
+        vuelo_resumen_t* vuelo_heap = resumir_vuelo((vuelo_t*)hash_iter_ver_actual(hash_iter));
+        if (contador < cantidad){
+            heap_encolar(heap, vuelo_heap);
+            contador++;
+        }
+        else if (priority_comp(vuelo_heap, (vuelo_t*)hash_iter_ver_actual(hash_iter)) < 0){
+            free(heap_desencolar(heap));
+            heap_encolar(heap, vuelo_heap);
+        }
+        else free(vuelo_heap);
+        hash_iter_avanzar(hash_iter);
     }
 
     while(!heap_esta_vacio(heap)){
@@ -285,12 +279,15 @@ void prioridad_vuelos(char** comando, hash_t* hash){
     }
 
     while(!lista_esta_vacia(lista)){
-        char* clave = (char*)lista_borrar_primero(lista);
-        printf("%s - %s", hash_obtener(hash, clave)->priority, hash_obtener(hash, clave)->flight_number);
+        vuelo_resumen_t* vuelo_actual = (vuelo_resumen_t*)lista_borrar_primero(lista);
+        printf("%s - %s\n", vuelo_actual->priority, vuelo_actual->flight_number);
     }
 
     hash_iter_destruir(hash_iter);
     heap_destruir(heap);
+    lista_destruir(lista, NULL);
+
+    return true;
 }
 
 ///
@@ -303,24 +300,23 @@ void borrar(char** comando);
 // EJECUTADOR
 ///
 
-bool ejecucion(char* linea, hash_t* hash, abb_t* abb){
+void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
     if (!strcmp(comando[0], "agregar_archivo")){
-        if(!agregar_archivo(comando, hash, abb)) return false; //EJECUTAR AGREGAR_ARCHIVO
+        if(!agregar_archivo(comando, hash, abb)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR AGREGAR_ARCHIVO
     }
     else if (!strcmp(comando[0], "ver_tablero")){
-        if(!ver_tablero(comando)) return false; //EJECUTAR VER_TABLERO
+        if(!ver_tablero(comando)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR VER_TABLERO
     }
     else if (!strcmp(comando[0], "info_vuelo")){
-        if(!info_vuelo(comando)) return false; //EJECUTAR INFO_VUELO
+        if(!info_vuelo(comando, hash)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR INFO_VUELO
     }
     else if (!strcmp(comando[0], "prioridad_vuelos")){
-        if(!prioridad_vuelos(comando, hash)) return false; //EJECUTAR PRIORIDAD_VUELOS
+        if(!prioridad_vuelos(comando, hash)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR PRIORIDAD_VUELOS
     }
     else if (!strcmp(comando[0], "borrar")){
-        if(!borrar(comando)) return false; //EJECUTAR BORRAR
+        if(!borrar(comando)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR BORRAR
     }
-    return true;
 }
 
 /*
@@ -353,12 +349,7 @@ int main(){
     size_t tam = 0;
     char* linea = NULL;
     while (getline(&linea, &tam, stdin) != -1){
-        if(!ejecucion(linea, hash, abb)){
-            fprintf(stderr, "\nError\n");
-        }else{
-            printf("\nOK\n");
-        }
+        ejecucion(linea, hash, abb);
     }
-
     return 0;
 }
