@@ -244,12 +244,12 @@ int buscar_mayor(const char* fecha1, const char* fecha2, int i){
     valor2[1] = '\0';
 
     if(atoi(valor1) > atoi(valor2)) return 1;
-    return -1
+    return -1;
 }
 
 int date_comp(const char* fecha1, const char* fecha2){
-    int tope = strlen(fecha1)+1;
-    while(i<tope){
+    size_t tope = strlen(fecha1)+1;
+    for(int i=0; i<tope; i++){
         if(fecha1[i] != fecha2[i]){
             return buscar_mayor(fecha1, fecha2, i);
         }
@@ -257,29 +257,30 @@ int date_comp(const char* fecha1, const char* fecha2){
     return 0;
 }
 
-vuelos_resumen_t** armar_vector(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos, int *tope){
-    vuelos_resumen_t* vuelos = malloc(sizeof(vuelos_resumen_t*)*cantidad_vuelos);
+vuelo_resumen_t** armar_vector(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos, int *tope){
+    vuelo_resumen_t** vuelos = malloc(sizeof(vuelo_resumen_t*)*cantidad_vuelos);
+    if(!vuelos) return NULL;
+
     vuelo_resumen_t* vuelo = NULL;
-    if(!vector) return;
-    int i=0;
+    //int i=0;
     while(!abb_iter_in_al_final(iter) && (*tope) < cantidad_vuelos){
         vuelo = (vuelo_resumen_t*)abb_iter_in_ver_actual(iter);
         if(strcmp(vuelo->date, fecha_final) > 0) break;
         vuelos[(*tope)] = vuelo;
         (*tope)++;
     }
-    return vector;
+    return vuelos;
 }
 
-void imprimir_vector(lista_t **vuelos, char* modo, int tope){
+void imprimir_vector(vuelo_resumen_t **vuelos, char* modo, int tope){
     bool ascendente = !strcmp(modo, "asc");
     if(ascendente){
         for(int i=0; i<tope; i++){
-            printf("\n%s - %s", vector[i]->date, vector[i]->flight_number);
+            printf("\n%s - %s", vuelos[i]->date, vuelos[i]->flight_number);
         }
     }else{
         for(int i=tope-1; i>=0; i--){
-            printf("\n%s - %s", vector[i]->date, vector[i]->flight_number);
+            printf("\n%s - %s", vuelos[i]->date, vuelos[i]->flight_number);
         }
     }
 }
@@ -310,7 +311,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         return false;
     }
     int tope = 0;
-    vuelos_resumen_t** vector = armar_vector(iter, fecha_final, cantidad_vuelos, &tope);
+    vuelo_resumen_t** vector = armar_vector(iter, fecha_final, cantidad_vuelos, &tope);
     if(!vector){
         free_strv(comando);
         abb_iter_in_destruir(iter);
@@ -344,12 +345,12 @@ bool info_vuelo(char** comando, hash_t* hash){
 // PRIORIDAD VUELOS
 ///
 
-int priority_comp(const vuelo_resumen_t* vuelo_1, const vuelo_resumen_t* vuelo_2){
-    if (atoi(vuelo_1->priority) > atoi(vuelo_2->priority)) return -1;
-    else if (atoi(vuelo_1->priority) < atoi(vuelo_2->priority)) return 1;
+int priority_comp(const void* vuelo_1, const void* vuelo_2){
+    if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) > atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return -1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) < atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return 1;
 
-    else if (atoi(vuelo_1->flight_number) > atoi(vuelo_2->flight_number)) return -1;
-    else if (atoi(vuelo_1->flight_number) < atoi(vuelo_2->flight_number)) return 1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) > atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return -1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) < atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return 1;
 
     return 0;
 }
@@ -361,7 +362,7 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     heap_t* heap = heap_crear(priority_comp);
     //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
     if (!heap) return false;
-
+    
     int cantidad = atoi(comando[1]);
     int contador = 0;
 
@@ -412,9 +413,10 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
 // BORRAR
 ///
 
-void borrar_e_imprimir_elementos(vuelos_resumen_t **vector, int tope, abb_t* abb, hash_t* hash){
+void borrar_e_imprimir_elementos(vuelo_resumen_t **vector, int tope, abb_t* abb, hash_t* hash){
     vuelo_resumen_t* vuelo_resumen = NULL;
     vuelo_t* vuelo_completo = NULL;
+
     for(int i=0; i<tope; i++){
         vuelo_resumen = vector[i];
         abb_borrar(abb, vuelo_resumen->date);
@@ -424,25 +426,23 @@ void borrar_e_imprimir_elementos(vuelos_resumen_t **vector, int tope, abb_t* abb
         //destruir_vuelo_resumen(vuelo_resumen);  //Ver si es necesario.
         free(vuelo_resumen);//Esto depende de la linea anterior, ver si es necesario.
     }
+
     free(vector);
 }
 
 bool borrar(char** comando, hash_t* hash, abb_t* abb){
+    if(!comando[1] || !comando[2]) return false;
+
     char* fecha_inicial = comando[1];
     char* fecha_final = comando[2];
-    if(date_comp(fecha_inicial, fecha_final) > 0){
-        free_strv(comando);
-        return false;
-    }
+    if(date_comp(fecha_inicial, fecha_final) > 0) return false;
+
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
-    if(!iter){
-        free_strv(comando);
-        return false;
-    }
+    if(!iter) return false;
+
     int tope = 0;
-    vuelos_resumen_t** vector = armar_vector(iter, fecha_final, cantidad_vuelos, &tope);
+    vuelo_resumen_t** vector = armar_vector(iter, fecha_final, -1, &tope); //REVISAR EL TEMA DE PASARLE -1
     if(!vector){
-        free_strv(comando);
         abb_iter_in_destruir(iter);
         return false;
     }
@@ -450,7 +450,6 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
 
     free(vector);
     abb_iter_in_destruir(iter);
-    free_strv(comando);
     return true;
 
 }
@@ -466,6 +465,7 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
 void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
     bool exito = true;
+    
     if (!strcmp(comando[0], "agregar_archivo")){
         exito = agregar_archivo(comando, hash, abb); //EJECUTAR AGREGAR_ARCHIVO
     }
@@ -485,7 +485,7 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
     else printf("OK\n");
 
-    freestrv(comando);
+    free_strv(comando);
 }
 
 /*
