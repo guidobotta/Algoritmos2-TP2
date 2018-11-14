@@ -481,6 +481,7 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     else if (!strcmp(comando[0], "borrar")){
         exito = borrar(comando, hash, abb); //EJECUTAR BORRAR
     }
+    else exito = false;
 
     if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
     else printf("OK\n");
@@ -509,7 +510,7 @@ int main(){
         return 1;
     }
 
-    abb_t* abb = abb_crear(/*funcion_comparacion*/, free);
+    abb_t* abb = abb_crear(date_comp, free);
     if(!abb){
         free(hash);
         return 1;

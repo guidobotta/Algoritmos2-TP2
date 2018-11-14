@@ -23,7 +23,7 @@ typedef struct lista{
 
 // Crea un nodo.
 // Post: devuelve el nodo con su valor asignado.
-nodo_t* crear_nodo(void* valor){
+nodo_t* crear_nodo_lista(void* valor){
     nodo_t* nodo = malloc(sizeof(nodo_t));
     if (!nodo) return NULL;
 
@@ -76,7 +76,7 @@ bool lista_esta_vacia(const lista_t *lista){
 }
 
 bool lista_insertar_primero(lista_t *lista, void *dato){
-    nodo_t* nodo = crear_nodo(dato);
+    nodo_t* nodo = crear_nodo_lista(dato);
     if (!nodo) return false;
 
     if (lista_esta_vacia(lista)) lista->ultimo = nodo;
@@ -87,7 +87,7 @@ bool lista_insertar_primero(lista_t *lista, void *dato){
 }
 
 bool lista_insertar_ultimo(lista_t *lista, void *dato){
-    nodo_t* nodo = crear_nodo(dato);
+    nodo_t* nodo = crear_nodo_lista(dato);
     if (!nodo) return false;
 
     if (lista_esta_vacia(lista)) lista->primero = nodo;
@@ -182,7 +182,7 @@ void lista_iter_destruir(lista_iter_t *iter){
 }
 
 bool lista_iter_insertar(lista_iter_t *iter, void *dato){
-    nodo_t* nodo_aux = crear_nodo(dato);
+    nodo_t* nodo_aux = crear_nodo_lista(dato);
     if (!nodo_aux) return false;
 
     if (!iter->anterior){
