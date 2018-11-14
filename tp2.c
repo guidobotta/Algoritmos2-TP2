@@ -20,12 +20,18 @@
 //SON TODOS CHAR*, VEMOS MAS ADELANTE QUE TIPO DE DATO CONVIENE PARA CADA UNO
 //REEMPLAZAR VUELO POR FLIGHT? PASAR TODO A INGLES O A ESPAÑOL? WTF CON "TODO" JAJA
 
-typedef vuelo_resumido{         //Guardamos cada struct vuelo_heap en el heap y con el conseguimos la
-    char* priority;         //clave para el hash
+/* ******************************************************************
+ *                     ESTRUCTURAS AUXILIARES
+ * *****************************************************************/
+
+//Estructura auxiliar para usar en Heap y Abb
+typedef struct vuelo_resumido{     
+    char* priority;                
     char* flight_number;
     char* date;
 }vuelo_resumen_t;
 
+//Estructura completa para usar en Hash
 typedef struct vuelo{
     char* flight_number;
     char* airline;
@@ -38,6 +44,10 @@ typedef struct vuelo{
     char* air_time;
     char* cancelled;
 }vuelo_t;
+
+/* ******************************************************************
+ *                     FUNCIONES AUXILIARES
+ * *****************************************************************/
 
 vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
     vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
@@ -60,12 +70,14 @@ void destruir_vuelo_resumen(vuelo_resumen_t* vuelo_resumen){
 
 void destruir_vuelo(vuelo_t *vuelo){
     free(vuelo->flight_number);
-    free(vuelo->airplane);
+    free(vuelo->airline);
     free(vuelo->origin_airport);
     free(vuelo->destination_airport);
     free(vuelo->tail_number);
     free(vuelo->priority);
     free(vuelo->date);
+    free(vuelo->departure_delay);
+    free(vuelo->air_time);
     free(vuelo->cancelled);
     free(vuelo);
 }
@@ -161,15 +173,19 @@ vuelo_t *vuelo_crear(char* linea){
         return NULL;
     }
 
+    freestrv(cadenas);
     return vuelo;
 }
+
+/* ******************************************************************
+ *                    FUNCIONES PRINCIPALES
+ * *****************************************************************/
 
 ///
 // AGREGAR ARCHIVO
 ///
 
 bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
-
 
     FILE* archivo = fopen(comando[1], "r");
     if(!archivo) return false;
@@ -201,8 +217,8 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
             return false;
         }
     }
-    fclose(archivo);
 
+    fclose(archivo);
     return true;
 }
 
@@ -210,7 +226,15 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
 // VER TABLERO
 ///
 
-void ver_tablero(char** comando);
+int date_comp(const vuelo_resumen_t* vuelo_1, const vuelo_resumen_t* vuelo_2){
+    if /*FECHA DEL VUELO 1 MAS GRANDE QUE VUELO 2*/ return -1;
+    else if /*FECHA DEL VUELO 1 MAS CHICA QUE VUELO 2*/ return 1;
+    return 0;
+}
+
+bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
+    return true;
+}
 
 ///
 // INFO VUELO
@@ -222,7 +246,7 @@ bool info_vuelo(char** comando, hash_t* hash){
 
     if(hash_pertenece(hash, comando[1])){
         vuelo_t* vuelo = hash_obtener(hash, comando[1]);
-        printf("%s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport, 
+        printf("%s %s %s %s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport, 
         vuelo->destination_airport, vuelo->tail_number, vuelo->priority, vuelo->date, vuelo->departure_delay,
         vuelo->air_time, vuelo->cancelled);
     }else return false;
@@ -302,7 +326,11 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
 // BORRAR
 ///
 
-void borrar(char** comando);
+bool borrar(char** comando, hash_t* hash, abb_t* abb);
+
+/* ******************************************************************
+ *                     ESTRUCTURA PRINCIPAL
+ * *****************************************************************/
 
 ///
 // EJECUTADOR
@@ -310,21 +338,27 @@ void borrar(char** comando);
 
 void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     char** comando = split(linea, ' ');
+    bool exito = true;
     if (!strcmp(comando[0], "agregar_archivo")){
-        if(!agregar_archivo(comando, hash, abb)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR AGREGAR_ARCHIVO
+        exito = agregar_archivo(comando, hash, abb)); //EJECUTAR AGREGAR_ARCHIVO
     }
     else if (!strcmp(comando[0], "ver_tablero")){
-        if(!ver_tablero(comando)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR VER_TABLERO
+        exito = ver_tablero(comando, hash, abb)); //EJECUTAR VER_TABLERO
     }
     else if (!strcmp(comando[0], "info_vuelo")){
-        if(!info_vuelo(comando, hash)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR INFO_VUELO
+        exito = info_vuelo(comando, hash); //EJECUTAR INFO_VUELO
     }
     else if (!strcmp(comando[0], "prioridad_vuelos")){
-        if(!prioridad_vuelos(comando, hash)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR PRIORIDAD_VUELOS
+        exito = prioridad_vuelos(comando, hash); //EJECUTAR PRIORIDAD_VUELOS
     }
     else if (!strcmp(comando[0], "borrar")){
-        if(!borrar(comando)) fprintf(stderr, "Error en el comando %s\n", comando[0]); //EJECUTAR BORRAR
+        exito = borrar(comando, hash, abb); //EJECUTAR BORRAR
     }
+
+    if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
+    else printf("OK\n");
+
+    freestrv(comando);
 }
 
 /*
