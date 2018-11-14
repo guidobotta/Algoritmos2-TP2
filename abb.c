@@ -254,9 +254,10 @@ void abb_iter_in_destruir(abb_iter_t* iter){
     pila_destruir(iter->pila);
     free(iter);
 }
+//Primitiva adicional y funcion auxiliar para el TP2
 
-void buscar_hijo_iter(abb_nodo_t* actual, abb_nodo_t** padre, const char* clave, abb_comparar_clave_t cmp, pila_t* pila){
-    if(!actual) return NULL;
+void buscar_hijo_iter(abb_nodo_t* actual, const char* clave, abb_comparar_clave_t cmp, pila_t* pila){
+    if(!actual) return;
     int comp = cmp(actual->clave, clave);
     if(comp >= 0){
         pila_apilar(pila, actual);
@@ -264,26 +265,25 @@ void buscar_hijo_iter(abb_nodo_t* actual, abb_nodo_t** padre, const char* clave,
 
     if(!comp) return;
 
-    *padre = actual;
-    if(comp < 0) return buscar_hijo_iter(actual->der, padre, clave, cmp);
-    return buscar_hijo_iter(actual->izq, padre, clave, cmp);
+    if(comp < 0) return buscar_hijo_iter(actual->der, clave, cmp, pila);
+    return buscar_hijo_iter(actual->izq, clave, cmp, pila);
 }
 
 abb_iter_t* abb_buscar_clave_e_iterar(abb_t* arbol, const char* clave){
     pila_t *pila = pila_crear();
     if(!pila) return NULL;
-    buscar_hijo_iter(arbol->raiz, padre, clave, abb->cmp, pila);
+    buscar_hijo_iter(arbol->raiz, clave, arbol->cmp, pila);
     if(pila_esta_vacia(pila)){
         pila_destruir(pila);
         return NULL;
     }
-    abb_iter_t* iter = malloc(sizeof(abb_iter_t*));
+    abb_iter_t* iter = malloc(sizeof(abb_iter_t));
     if(!iter){
         pila_destruir(pila);
         return NULL;
     }
     iter->arbol = arbol;
     iter->pila = pila;
-    
+
     return iter;
 }
