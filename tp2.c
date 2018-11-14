@@ -250,23 +250,6 @@ int date_comp(const char* fecha1, const char* fecha2){
     return 0;
 }
 
-int calcular_segundos(char* fecha){
-    char** anio_mes_dia = split(fecha, '-');
-    char** dia_hora = split(anio_mes_dia[2], 'T');
-    char** hora_min_seg = split(dia_hora[1], ':');
-
-
-    free_strv(anio_mes_dia);
-}
-
-int date_comp(const char* fecha1, const char* fecha2){
-    int segundos1 = calcular_segundos((char*)fecha1);
-    int segundos2 = calcular_segundos((char*)fecha2);
-    if(segundos1 > segundos2) return -1;
-    else if(segundos1 > segundos2) return 1;
-    return 0;
-}
-
 vuelos_resumen_t** armar_vector(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos, int tope){
     vuelos_resumen_t* vuelos = malloc(sizeof(vuelos_resumen_t*)*cantidad_vuelos);
     vuelo_resumen_t* vuelo = NULL;
