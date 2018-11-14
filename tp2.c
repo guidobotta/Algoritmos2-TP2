@@ -53,9 +53,9 @@ vuelo_resumen_t *resumir_vuelo(vuelo_t* vuelo){
     vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
     if(!vuelo_resumen) return NULL;
 
-    vuelo_resumen->priority = vuelo->priority;
-    vuelo_resumen->flight_number = vuelo->flight_number;
-    vuelo_resumen->date = vuelo->date;
+    vuelo_resumen->priority = strdup(vuelo->priority);
+    vuelo_resumen->flight_number = strdup(vuelo->flight_number);
+    vuelo_resumen->date = strdup(vuelo->date);
 
     return vuelo_resumen;
 }
