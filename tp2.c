@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#define FORMATO_ARCHIVO "%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^,],%[^\n]\n"
-#define NUMERO_PARAMETROS 10
 
 /*
     Para cada archivo nuevo:
@@ -87,7 +85,6 @@ void destruir_vuelo(vuelo_t *vuelo){
 vuelo_t *vuelo_crear(char* linea){
     vuelo_t *vuelo = malloc(sizeof(vuelo_t));
     if(!vuelo) return NULL;
-    //Pedir memoria para cada uno y luego asignar NULL o 0.
 
     char **cadenas = split(linea, ',');
     if (!cadenas) return NULL;
@@ -230,36 +227,70 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
 // VER TABLERO
 ///
 
-int date_comp(const vuelo_resumen_t* vuelo_1, const vuelo_resumen_t* vuelo_2){
-    if /*FECHA DEL VUELO 1 MAS GRANDE QUE VUELO 2*/ return -1;
-    else if /*FECHA DEL VUELO 1 MAS CHICA QUE VUELO 2*/ return 1;
+int buscar_mayor(const char* fecha1, const char* fecha2, int i){
+    char valor1[2];
+    char valor2[2];
+
+    valor1[0] = fecha1[i];
+    valor1[1] = '\0';
+    valor2[0] = fecha2[i];
+    valor2[1] = '\0';
+
+    if(atoi(valor1) > atoi(valor2)) return 1;
+    return -1
+}
+
+int date_comp(const char* fecha1, const char* fecha2){
+    int tope = strlen(fecha1)+1;
+    while(i<tope){
+        if(fecha[i] != fecha[i]){
+            return buscar_mayor(fecha1, fecha2, i);
+        }
+    }
     return 0;
 }
 
-lista_t* armar_lista(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos){
-    lista_t* lista = lista_crear();
-    vuelo_resumen_t* vuelo = NULL;
-    if(!lista) return;
-    int i=0;
-    while(!abb_iter_in_al_final(iter) && i < cantidad_vuelos){
-        vuelo = (vuelo_resumen_t*)abb_iter_in_ver_actual(iter);
-        if(strcmp(vuelo->date, fecha_final) > 0) break;
-        lista_insertar_ultimo(lista, vuelo);
-        i++;
-    }
-    return lista;
+int calcular_segundos(char* fecha){
+    char** anio_mes_dia = split(fecha, '-');
+    char** dia_hora = split(anio_mes_dia[2], 'T');
+    char** hora_min_seg = split(dia_hora[1], ':');
+
+
+    free_strv(anio_mes_dia);
 }
 
-void imprimir_lista(lista_t *lista, char* modo){
+int date_comp(const char* fecha1, const char* fecha2){
+    int segundos1 = calcular_segundos((char*)fecha1);
+    int segundos2 = calcular_segundos((char*)fecha2);
+    if(segundos1 > segundos2) return -1;
+    else if(segundos1 > segundos2) return 1;
+    return 0;
+}
+
+vuelos_resumen_t** armar_vector(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos, int tope){
+    vuelos_resumen_t* vuelos = malloc(sizeof(vuelos_resumen_t*)*cantidad_vuelos);
+    vuelo_resumen_t* vuelo = NULL;
+    if(!vector) return;
+    int i=0;
+    while(!abb_iter_in_al_final(iter) && (*tope) < cantidad_vuelos){
+        vuelo = (vuelo_resumen_t*)abb_iter_in_ver_actual(iter);
+        if(strcmp(vuelo->date, fecha_final) > 0) break;
+        vuelos[(*tope)] = vuelo;
+        (*tope)++;
+    }
+    return vector;
+}
+
+void imprimir_vector(lista_t **vuelos, char* modo, int tope){
     bool ascendente = !strcmp(modo, "asc");
-    vuelo_resumen_t *vuelo = NULL;
-    while(!lista_esta_vacia(lista)){
-        if(ascendente){
-            vuelo = lista_borrar_primero(lista);
-        }else{
-            vuelo = lista_borrar_ultimo(lista);
+    if(ascendente){
+        for(int i=0; i<tope; i++){
+            printf("\n%s - %s", vector[i]->date, vector[i]->flight_number);
         }
-        printf("\n%s - %s", vuelo->date, vuelo->flight_number);
+    }else{
+        for(int i=tope-1; i>=0; i--){
+            printf("\n%s - %s", vector[i]->date, vector[i]->flight_number);
+        }
     }
 }
 
@@ -288,15 +319,16 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         free_strv(comando);
         return false;
     }
-    lista_t *lista = armar_lista(iter, fecha_final, cantidad_vuelos);
-    if(!lista){
+    int tope = 0;
+    vuelos_resumen_t** vector = armar_vector(iter, fecha_final, cantidad_vuelos, &tope);
+    if(!vector){
         free_strv(comando);
         abb_iter_in_destruir(iter);
         return false;
     }
-    imprimir_lista(lista, modo);
+    imprimir_vector(vector, modo, tope);
 
-    lista_destruir(lista, NULL);
+    free(vector);
     abb_iter_in_destruir(iter);
     free_strv(comando);
     return true;
