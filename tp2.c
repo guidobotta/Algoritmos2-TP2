@@ -260,17 +260,18 @@ int date_comp(const char* fecha1, const char* fecha2){
     return 0;
 }
 
-vuelo_resumen_t** armar_vector(abb_iter_t* iter, char* fecha_final, int cantidad_vuelos, int *tope){
+vuelo_resumen_t** armar_vector(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, int *tope){
     vuelo_resumen_t** vuelos = malloc(sizeof(vuelo_resumen_t*)*cantidad_vuelos);
     if(!vuelos) return NULL;
 
     vuelo_resumen_t* vuelo = NULL;
     //int i=0;
     while(!abb_iter_in_al_final(iter) && (*tope) < cantidad_vuelos){
-        vuelo = (vuelo_resumen_t*)abb_iter_in_ver_actual(iter);
-        if(strcmp(vuelo->date, fecha_final) > 0) break;
+        vuelo = abb_obtener(abb, abb_iter_in_ver_actual(iter));
+        if(date_comp(vuelo->date, fecha_final) > 0) break;
         vuelos[(*tope)] = vuelo;
         (*tope)++;
+        abb_iter_in_avanzar(iter);
     }
     return vuelos;
 }
@@ -292,10 +293,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     //ver_tablero <K cantidad vuelos> <modo: asc/desc> <desde> <hasta>
 
     int cantidad_vuelos = atoi(comando[1]);
-    if(cantidad_vuelos <= 0){
-        free_strv(comando);
-        return false;
-    }
+    if(cantidad_vuelos <= 0) return false;
     char* modo = comando[2];
     if(strcmp(modo, "asc") && strcmp(modo, "desc")){
         free_strv(comando);
@@ -303,10 +301,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     }
     char* fecha_inicial = comando[3];
     char* fecha_final = comando[4];
-    if(date_comp(fecha_inicial, fecha_final) > 0){
-        free_strv(comando);
-        return false;
-    }
+    if(date_comp(fecha_inicial, fecha_final) > 0) return false;
 
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
     if(!iter){
@@ -314,9 +309,8 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         return false;
     }
     int tope = 0;
-    vuelo_resumen_t** vector = armar_vector(iter, fecha_final, cantidad_vuelos, &tope);
+    vuelo_resumen_t** vector = armar_vector(iter, abb, fecha_final, cantidad_vuelos, &tope);
     if(!vector){
-        free_strv(comando);
         abb_iter_in_destruir(iter);
         return false;
     }
@@ -324,7 +318,6 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
 
     free(vector);
     abb_iter_in_destruir(iter);
-    free_strv(comando);
     return true;
 }
 
@@ -445,7 +438,7 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
     if(!iter) return false;
 
     int tope = 0;
-    vuelo_resumen_t** vector = armar_vector(iter, fecha_final, -1, &tope); //REVISAR EL TEMA DE PASARLE -1
+    vuelo_resumen_t** vector = armar_vector(iter, abb, fecha_final, -1, &tope); //REVISAR EL TEMA DE PASARLE -1
     if(!vector){
         abb_iter_in_destruir(iter);
         return false;
@@ -488,7 +481,7 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     else exito = false;
 
     if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
-    else printf("OK\n");
+    else printf("\nOK\n");
 
     free_strv(comando);
 }
