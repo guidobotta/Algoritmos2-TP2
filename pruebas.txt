@@ -10,3 +10,10 @@ prioridad_vuelos 6
 agregar_archivo vuelos-algueiza-parte-03.csv
 agregar_archivo vuelos-algueiza-parte-04.csv
 agregar_archivo vuelos-algueiza-parte-05.csv
+info_vuelo 118
+info_vuelo 651
+info_vuelo 2853
+info_vuelo 5460
+info_vuelo 6391
+info_vuelo 1070
+borrar 2018-03-01T10:00:00 2018-10-04T20:00:00
