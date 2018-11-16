@@ -199,35 +199,39 @@ int date_comp(const char* fecha1, const char* fecha2){
     return 0;
 }// ¡¡FALTA COMPARAR POR NUMERO DE VUELO!!
 
-//Crea un vector de vuelos ordenados y lo devuelve (ver_tablero y borrar)
-vuelo_resumen_t** crear_vector(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, int *tope){
-    vuelo_resumen_t** vuelos = malloc(sizeof(vuelo_resumen_t*)*cantidad_vuelos);
-    if(!vuelos) return NULL;
+//Crea una lista de vuelos ordenados segun el modo y lo devuelve (ver_tablero y borrar)
+lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, char* modo){
+    lista_t* lista_vuelos = lista_crear();
+    if (!lista_vuelos) return NULL;
 
     vuelo_resumen_t* vuelo = NULL;
-    //int i=0;
-    while( (!abb_iter_in_al_final(iter)) && ( ((*tope) < cantidad_vuelos) || (cantidad_vuelos == -1)) ){
+    bool ascendente = !strcmp(modo, "asc");
+    int tope = 0;
+    
+    while( (!abb_iter_in_al_final(iter)) && ( (tope < cantidad_vuelos) || (cantidad_vuelos == -1)) ){
         vuelo = abb_obtener(abb, abb_iter_in_ver_actual(iter));
         if(date_comp(vuelo->date, fecha_final) > 0) break;
-        vuelos[(*tope)] = vuelo;
-        (*tope)++;
+        if(ascendente) lista_insertar_ultimo(lista_vuelos, vuelo);
+        else lista_insertar_primero(lista_vuelos, vuelo);
+        tope++;
         abb_iter_in_avanzar(iter);
     }
-    return vuelos;
+
+    return lista_vuelos;
 }
 
-//Imprime el vector de vuelos de ver_tablero (ver_tablero)
-void imprimir_vector(vuelo_resumen_t **vuelos, char* modo, int tope){
-    bool ascendente = !strcmp(modo, "asc");
-    if(ascendente){
-        for(int i=0; i<tope; i++){
-            printf("%s - %s\n", vuelos[i]->date, vuelos[i]->flight_number);
-        }
-    }else{
-        for(int i=tope-1; i>=0; i--){
-            printf("%s - %s\n", vuelos[i]->date, vuelos[i]->flight_number);
-        }
+//Imprime la lista de vuelos de ver_tablero (ver_tablero)
+void imprimir_lista_vuelos(lista_t* lista_vuelos){
+    lista_iter_t* lista_iter = lista_iter_crear(lista_vuelos);
+    if(lista_iter) return;
+
+    while(!lista_iter_al_final(lista_iter)){
+        vuelo_resumen_t* vuelo_actual = (vuelo_resumen_t*)lista_iter_ver_actual(lista_iter);
+        printf("%s - %s\n", vuelo_actual->date, vuelo_actual->flight_number);
+        lista_iter_avanzar(lista_iter);
     }
+
+    lista_iter_destruir(lista_iter);
 }
 
 //Imprime el vuelo completo (info_vuelo, borrar)
@@ -249,21 +253,21 @@ int priority_comp(const void* vuelo_1, const void* vuelo_2){
 }
 
 //Imprime y luego borra a los elementos (borrar)
-void borrar_e_imprimir_elementos(vuelo_resumen_t **vector, int tope, abb_t* abb, hash_t* hash){
+void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash){
+    lista_iter_t* lista_iter = lista_iter_crear(lista_vuelos);
+    if(lista_iter) return;
+
     vuelo_resumen_t* vuelo_resumen = NULL;
     vuelo_t* vuelo_completo = NULL;
 
-    for(int i=0; i<tope; i++){
-        vuelo_resumen = vector[i];
+    while(!lista_iter_al_final(lista_iter)){
+        vuelo_resumen = (vuelo_resumen_t*)lista_iter_ver_actual(lista_iter);
         abb_borrar(abb, vuelo_resumen->date);
-        vuelo_completo = hash_borrar(hash, vuelo_resumen->date);
+        vuelo_completo = (vuelo_t*)hash_borrar(hash, vuelo_resumen->date);
         imprimir_vuelo(vuelo_completo);
         destruir_vuelo(vuelo_completo);
-        free(vuelo_resumen);  //Ver si es necesario.
-        //free(vuelo_resumen);//Esto depende de la linea anterior, ver si es necesario.
+        free(vuelo_resumen);
     }
-
-    free(vector);
 }
 
 /* ******************************************************************
@@ -331,6 +335,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         free_strv(comando);
         return false;
     }
+
     char* fecha_inicial = comando[3];
     char* fecha_final = comando[4];
     if(date_comp(fecha_inicial, fecha_final) > 0) return false;
@@ -340,15 +345,15 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         free_strv(comando);
         return false;
     }
-    int tope = 0;
-    vuelo_resumen_t** vector = crear_vector(iter, abb, fecha_final, cantidad_vuelos, &tope);
-    if(!vector){
+
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, cantidad_vuelos, modo);
+    if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
     }
-    imprimir_vector(vector, modo, tope);
+    imprimir_lista_vuelos(lista_vuelos);
 
-    free(vector);
+    lista_destruir(lista_vuelos, NULL); //Chequear si no hay que pasarle destruir_vuelo
     abb_iter_in_destruir(iter);
     return true;
 }
@@ -448,15 +453,14 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
     if(!iter) return false;
 
-    int tope = 0;
-    vuelo_resumen_t** vector = crear_vector(iter, abb, fecha_final, -1, &tope); //REVISAR EL TEMA DE PASARLE -1
-    if(!vector){
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, -1, "asc"); //HACER UN DEFINE CON ASCENDENTE Y DESCENDENTE
+    if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
     }
-    borrar_e_imprimir_elementos(vector, tope, abb, hash);
+    borrar_e_imprimir_elementos(lista_vuelos, abb, hash);
 
-    free(vector);
+    lista_destruir(lista_vuelos, NULL); //Chequear si no hay que pasarle destruir_vuelo
     abb_iter_in_destruir(iter);
     return true;
 
