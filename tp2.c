@@ -49,40 +49,7 @@ typedef struct vuelo{
  *                     FUNCIONES AUXILIARES
  * *****************************************************************/
 
-vuelo_resumen_t *crear_vuelo_resumen(vuelo_t* vuelo){
-    vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
-    if(!vuelo_resumen) return NULL;
-
-    vuelo_resumen->priority = vuelo->priority;
-    vuelo_resumen->flight_number = vuelo->flight_number;
-    vuelo_resumen->date = vuelo->date;
-
-    return vuelo_resumen;
-}
-
-//Quizás esta funcion no es necesaria
-
-void imprimir_vuelo(vuelo_t* vuelo){
-    printf("%s %s %s %s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport,
-    vuelo->destination_airport, vuelo->tail_number, vuelo->priority, vuelo->date, vuelo->departure_delay,
-    vuelo->air_time, vuelo->cancelled);
-}
-
-void destruir_vuelo(void* _vuelo_){
-    vuelo_t* vuelo = _vuelo_;
-    free(vuelo->flight_number);
-    free(vuelo->airline);
-    free(vuelo->origin_airport);
-    free(vuelo->destination_airport);
-    free(vuelo->tail_number);
-    free(vuelo->priority);
-    free(vuelo->date);
-    free(vuelo->departure_delay);
-    free(vuelo->air_time);
-    free(vuelo->cancelled);
-    free(vuelo);
-}
-
+//Crea un vuelo completo
 vuelo_t *vuelo_crear(char* linea){
     vuelo_t *vuelo = malloc(sizeof(vuelo_t));
     if(!vuelo) return NULL;
@@ -179,6 +146,132 @@ vuelo_t *vuelo_crear(char* linea){
     return vuelo;
 }
 
+//Crea un vuelo resumido
+vuelo_resumen_t *crear_vuelo_resumen(vuelo_t* vuelo){
+    vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
+    if(!vuelo_resumen) return NULL;
+
+    vuelo_resumen->priority = vuelo->priority;
+    vuelo_resumen->flight_number = vuelo->flight_number;
+    vuelo_resumen->date = vuelo->date;
+
+    return vuelo_resumen;
+}
+
+//Destruye el vuelo completo
+void destruir_vuelo(void* _vuelo_){
+    vuelo_t* vuelo = _vuelo_;
+    free(vuelo->flight_number);
+    free(vuelo->airline);
+    free(vuelo->origin_airport);
+    free(vuelo->destination_airport);
+    free(vuelo->tail_number);
+    free(vuelo->priority);
+    free(vuelo->date);
+    free(vuelo->departure_delay);
+    free(vuelo->air_time);
+    free(vuelo->cancelled);
+    free(vuelo);
+}
+
+//Devuelve el mayor de los valores
+int buscar_mayor(const char* fecha1, const char* fecha2, int i){
+    char valor1[2];
+    char valor2[2];
+
+    valor1[0] = fecha1[i];
+    valor1[1] = '\0';
+    valor2[0] = fecha2[i];
+    valor2[1] = '\0';
+
+    if(atoi(valor1) > atoi(valor2)) return 1;
+    return -1;
+} // ¡¡REVISAR ESTA FUNCIÓN | NO LA VEO NECESARIA, SON CHAR LOS QUE RECIBE!!
+
+//Comparación por date (ver_tablero, borrar y main)
+int date_comp(const char* fecha1, const char* fecha2){
+    size_t tope = strlen(fecha1)+1;
+    for(int i=0; i<tope; i++){
+        if(fecha1[i] != fecha2[i]){
+            return buscar_mayor(fecha1, fecha2, i);
+        }
+    }
+    return 0;
+}// ¡¡FALTA COMPARAR POR NUMERO DE VUELO!!
+
+//Crea una lista de vuelos ordenados segun el modo y lo devuelve (ver_tablero y borrar)
+lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, char* modo){
+    lista_t* lista_vuelos = lista_crear();
+    if (!lista_vuelos) return NULL;
+
+    vuelo_resumen_t* vuelo = NULL;
+    bool ascendente = !strcmp(modo, "asc");
+    int tope = 0;
+
+    while( (!abb_iter_in_al_final(iter)) && ( (tope < cantidad_vuelos) || (cantidad_vuelos == -1)) ){
+        vuelo = abb_obtener(abb, abb_iter_in_ver_actual(iter));
+        if(date_comp(vuelo->date, fecha_final) > 0) break;
+        if(ascendente) lista_insertar_ultimo(lista_vuelos, vuelo);
+        else lista_insertar_primero(lista_vuelos, vuelo);
+        tope++;
+        abb_iter_in_avanzar(iter);
+    }
+
+    return lista_vuelos;
+}
+
+//Imprime la lista de vuelos de ver_tablero (ver_tablero)
+void imprimir_lista_vuelos(lista_t* lista_vuelos){
+    lista_iter_t* lista_iter = lista_iter_crear(lista_vuelos);
+    if(!lista_iter) return;
+
+    while(!lista_iter_al_final(lista_iter)){
+        vuelo_resumen_t* vuelo_actual = (vuelo_resumen_t*)lista_iter_ver_actual(lista_iter);
+        printf("%s - %s\n", vuelo_actual->date, vuelo_actual->flight_number);
+        lista_iter_avanzar(lista_iter);
+    }
+
+    lista_iter_destruir(lista_iter);
+}
+
+//Imprime el vuelo completo (info_vuelo, borrar)
+void imprimir_vuelo(vuelo_t* vuelo){
+    printf("%s %s %s %s %s %s %s %s %s %s\n", vuelo->flight_number, vuelo->airline, vuelo->origin_airport,
+    vuelo->destination_airport, vuelo->tail_number, vuelo->priority, vuelo->date, vuelo->departure_delay,
+    vuelo->air_time, vuelo->cancelled);
+}
+
+//Comparación por priority y flight_number (prioridad_vuelo)
+int priority_comp(const void* vuelo_1, const void* vuelo_2){
+    if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) > atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return -1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) < atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return 1;
+
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) > atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return -1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) < atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return 1;
+
+    return 0;
+}
+
+//Imprime y luego borra a los elementos (borrar)
+void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash){
+    lista_iter_t* lista_iter = lista_iter_crear(lista_vuelos);
+    if(!lista_iter) return;
+
+    vuelo_resumen_t* vuelo_resumen = NULL;
+    vuelo_t* vuelo_completo = NULL;
+
+    while(!lista_iter_al_final(lista_iter)){
+        vuelo_resumen = lista_iter_ver_actual(lista_iter);
+        vuelo_completo = hash_borrar(hash, vuelo_resumen->flight_number);
+        abb_borrar(abb, vuelo_resumen->date);
+        imprimir_vuelo(vuelo_completo);
+        destruir_vuelo(vuelo_completo);
+        //free(vuelo_resumen);
+        lista_iter_avanzar(lista_iter);
+    }
+    lista_iter_destruir(lista_iter);
+}
+
 /* ******************************************************************
  *                    FUNCIONES PRINCIPALES
  * *****************************************************************/
@@ -188,6 +281,9 @@ vuelo_t *vuelo_crear(char* linea){
 ///
 
 bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
+    //agregar_archivo <archivo>
+
+    if(!comando[1]) return false;
 
     FILE* archivo = fopen(comando[1], "r");
     if(!archivo) return false;
@@ -229,60 +325,10 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
 // VER TABLERO
 ///
 
-int buscar_mayor(const char* fecha1, const char* fecha2, int i){
-    char valor1[2];
-    char valor2[2];
-
-    valor1[0] = fecha1[i];
-    valor1[1] = '\0';
-    valor2[0] = fecha2[i];
-    valor2[1] = '\0';
-
-    if(atoi(valor1) > atoi(valor2)) return 1;
-    return -1;
-}
-
-int date_comp(const char* fecha1, const char* fecha2){
-    size_t tope = strlen(fecha1)+1;
-    for(int i=0; i<tope; i++){
-        if(fecha1[i] != fecha2[i]){
-            return buscar_mayor(fecha1, fecha2, i);
-        }
-    }
-    return 0;
-}
-
-vuelo_resumen_t** armar_vector(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, int *tope){
-    vuelo_resumen_t** vuelos = malloc(sizeof(vuelo_resumen_t*)*cantidad_vuelos);
-    if(!vuelos) return NULL;
-
-    vuelo_resumen_t* vuelo = NULL;
-    //int i=0;
-    while(!abb_iter_in_al_final(iter) && (*tope) < cantidad_vuelos){
-        vuelo = abb_obtener(abb, abb_iter_in_ver_actual(iter));
-        if(date_comp(vuelo->date, fecha_final) > 0) break;
-        vuelos[(*tope)] = vuelo;
-        (*tope)++;
-        abb_iter_in_avanzar(iter);
-    }
-    return vuelos;
-}
-
-void imprimir_vector(vuelo_resumen_t **vuelos, char* modo, int tope){
-    bool ascendente = !strcmp(modo, "asc");
-    if(ascendente){
-        for(int i=0; i<tope; i++){
-            printf("\n%s - %s", vuelos[i]->date, vuelos[i]->flight_number);
-        }
-    }else{
-        for(int i=tope-1; i>=0; i--){
-            printf("\n%s - %s", vuelos[i]->date, vuelos[i]->flight_number);
-        }
-    }
-}
-
 bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     //ver_tablero <K cantidad vuelos> <modo: asc/desc> <desde> <hasta>
+
+    if(!comando[1] || !comando[2] || !comando[3] || !comando[4]) return false;
 
     int cantidad_vuelos = atoi(comando[1]);
     if(cantidad_vuelos <= 0) return false;
@@ -291,6 +337,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         free_strv(comando);
         return false;
     }
+
     char* fecha_inicial = comando[3];
     char* fecha_final = comando[4];
     if(date_comp(fecha_inicial, fecha_final) > 0) return false;
@@ -300,15 +347,15 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
         free_strv(comando);
         return false;
     }
-    int tope = 0;
-    vuelo_resumen_t** vector = armar_vector(iter, abb, fecha_final, cantidad_vuelos, &tope);
-    if(!vector){
+
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, cantidad_vuelos, modo);
+    if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
     }
-    imprimir_vector(vector, modo, tope);
+    imprimir_lista_vuelos(lista_vuelos);
 
-    free(vector);
+    lista_destruir(lista_vuelos, NULL); //Chequear si no hay que pasarle destruir_vuelo
     abb_iter_in_destruir(iter);
     return true;
 }
@@ -318,6 +365,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
 ///
 
 bool info_vuelo(char** comando, hash_t* hash){
+    //info_vuelo <numero de vuelo>
 
     if(!comando[1]) return false;
 
@@ -333,17 +381,9 @@ bool info_vuelo(char** comando, hash_t* hash){
 // PRIORIDAD VUELOS
 ///
 
-int priority_comp(const void* vuelo_1, const void* vuelo_2){
-    if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) > atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return -1;
-    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) < atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return 1;
-
-    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) > atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return -1;
-    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) < atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return 1;
-
-    return 0;
-}
 
 bool prioridad_vuelos(char** comando, hash_t* hash){
+    //prioridad_vuelos <K cantidad vuelos>
 
     if(!comando[1]) return false;
 
@@ -403,24 +443,9 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
 // BORRAR
 ///
 
-void borrar_e_imprimir_elementos(vuelo_resumen_t **vector, int tope, abb_t* abb, hash_t* hash){
-    vuelo_resumen_t* vuelo_resumen = NULL;
-    vuelo_t* vuelo_completo = NULL;
-
-    for(int i=0; i<tope; i++){
-        vuelo_resumen = vector[i];
-        abb_borrar(abb, vuelo_resumen->date);
-        vuelo_completo = hash_borrar(hash, vuelo_resumen->date);
-        imprimir_vuelo(vuelo_completo);
-        destruir_vuelo(vuelo_completo);
-        free(vuelo_resumen);  //Ver si es necesario.
-        //free(vuelo_resumen);//Esto depende de la linea anterior, ver si es necesario.
-    }
-
-    free(vector);
-}
-
 bool borrar(char** comando, hash_t* hash, abb_t* abb){
+    //borrar <desde> <hasta>
+
     if(!comando[1] || !comando[2]) return false;
 
     char* fecha_inicial = comando[1];
@@ -430,15 +455,14 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
     if(!iter) return false;
 
-    int tope = 0;
-    vuelo_resumen_t** vector = armar_vector(iter, abb, fecha_final, -1, &tope); //REVISAR EL TEMA DE PASARLE -1
-    if(!vector){
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, -1, "asc"); //HACER UN DEFINE CON ASCENDENTE Y DESCENDENTE
+    if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
     }
-    borrar_e_imprimir_elementos(vector, tope, abb, hash);
+    borrar_e_imprimir_elementos(lista_vuelos, abb, hash);
 
-    free(vector);
+    lista_destruir(lista_vuelos, NULL); //Chequear si no hay que pasarle destruir_vuelo
     abb_iter_in_destruir(iter);
     return true;
 
@@ -474,7 +498,7 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     else exito = false;
 
     if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
-    else printf("\nOK\n");
+    else printf("OK\n");
 
     free_strv(comando);
 }
@@ -484,12 +508,16 @@ Ejecuta el main.c y se queda esperando input del usuario
 
 #agregar_archivo <nombre_archivo>
 Llama a la funcion agregar_archivo(nombre_archivo);
+
 #ver_tablero <k cantidad vuelo> <modo: asc/desc> <desde> <hasta>
 Llama a la funcion ver_tablero();
+
 #info_vuelo <codigo vuelo>
 Llama a la funcion info_vuelo();
+
 #prioridad_vuelos <k cantidad vuelos>
 Llama a la funcion prioridad_vuelos();
+
 #borrar <desde> <hasta>
 Llama a la funcion borrar();
 */
