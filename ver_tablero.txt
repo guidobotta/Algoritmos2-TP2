@@ -1,0 +1,8 @@
+agregar_archivo vuelos-algueiza-parte-01.csv
+ver_tablero 5 asc 2018-01-02T23:04:56 2018-05-10T08:41:10
+agregar_archivo vuelos-algueiza-parte-02.csv
+ver_tablero 5 asc 2018-01-02T23:04:56 2018-05-10T08:41:10
+agregar_archivo vuelos-algueiza-parte-03.csv
+ver_tablero 5 asc 2018-01-02T23:04:56 2018-05-10T08:41:10
+agregar_archivo vuelos-algueiza-parte-04.csv
+ver_tablero 5 asc 2018-01-02T23:04:56 2018-05-10T08:41:10
