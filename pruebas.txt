@@ -1,10 +1,10 @@
 agregar_archivo vuelos-algueiza-parte-01.csv
-info_vuelo 4608
-ver_tablero 15 asc 2017-04-08T11:15:29 2019-10-04T04:19:24
-agregar_archivo vuelos-algueiza-parte-02.csv
+//info_vuelo 4608
+//ver_tablero 15 asc 2017-04-08T11:15:29 2019-10-04T04:19:24
+//agregar_archivo vuelos-algueiza-parte-02.csv
 agregar_archivo vuelos-algueiza-parte-03.csv
-agregar_archivo vuelos-algueiza-parte-04.csv
-agregar_archivo vuelos-algueiza-parte-05.csv
+//agregar_archivo vuelos-algueiza-parte-04.csv
+//agregar_archivo vuelos-algueiza-parte-05.csv
 //info_vuelo 4608
 ver_tablero 1500 asc 2017-04-08T11:15:29 2019-10-04T04:19:24
 //prioridad_vuelos 1000

@@ -295,7 +295,7 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
             fclose(archivo);
             return false;
         }
-        
+
         char* date_fnumber[3];
         date_fnumber[0] = vuelo->date;
         date_fnumber[1] = vuelo->flight_number;
@@ -306,7 +306,7 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
             fclose(archivo);
             return false;
         }
-
+        free(clave_abb);
         if(!hash_guardar(hash, vuelo->flight_number, vuelo)){
             destruir_vuelo(vuelo);
             fclose(archivo);
