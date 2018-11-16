@@ -267,6 +267,7 @@ void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash
         imprimir_vuelo(vuelo_completo);
         destruir_vuelo(vuelo_completo);
         free(vuelo_resumen);
+        lista_iter_avanzar(lista_iter);
     }
 }
 
