@@ -255,10 +255,14 @@ void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash
     while(!lista_iter_al_final(lista_iter)){
         vuelo_resumen = lista_iter_ver_actual(lista_iter);
         vuelo_completo = hash_borrar(hash, vuelo_resumen->flight_number);
-        abb_borrar(abb, vuelo_resumen->date);
+        char* date_fnumber[3];
+        date_fnumber[0] = vuelo_completo->date;
+        date_fnumber[1] = vuelo_completo->flight_number;
+        date_fnumber[2] = NULL;
+        char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
+        abb_borrar(abb, clave_abb);
         imprimir_vuelo(vuelo_completo);
         destruir_vuelo(vuelo_completo);
-        //free(vuelo_resumen);
         lista_iter_avanzar(lista_iter);
     }
     lista_iter_destruir(lista_iter);
@@ -284,11 +288,23 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
     int leidos = 0;
     while((leidos = (int)getline(&linea, &n, archivo)) !=-1){
         if (linea[leidos-1] == '\n') linea[leidos-1] = '\0';
+
         vuelo_t *vuelo = vuelo_crear(linea);
         if(!vuelo){
             fclose(archivo);
             return false;
         }
+
+        if(hash_pertenece(hash, vuelo->flight_number)){
+            char* _date_fnumber[3];
+            _date_fnumber[0] = vuelo->date;
+            _date_fnumber[1] = vuelo->flight_number;
+            _date_fnumber[2] = NULL;
+            char* _clave_abb = join(_date_fnumber, '|');
+            abb_borrar(abb, _clave_abb);
+            free(_clave_abb);
+        }
+
         vuelo_resumen_t *vuelo_resumen = crear_vuelo_resumen(vuelo);
         if(!vuelo_resumen){
             destruir_vuelo(vuelo);
@@ -301,6 +317,7 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
         date_fnumber[1] = vuelo->flight_number;
         date_fnumber[2] = NULL;
         char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
+
         if(!abb_guardar(abb, clave_abb, vuelo_resumen)){
             destruir_vuelo(vuelo);
             fclose(archivo);
