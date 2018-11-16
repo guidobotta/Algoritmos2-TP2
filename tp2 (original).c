@@ -4,15 +4,11 @@
 #include "abb.h"
 #include "lista.h"
 #include "strutil.h"
-#include <ctype.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#define ASCENDENTE "asc"
-#define DESCENDENTE "desc"
-
 
 /*
     Para cada archivo nuevo:
@@ -27,6 +23,13 @@
 /* ******************************************************************
  *                     ESTRUCTURAS AUXILIARES
  * *****************************************************************/
+
+//Estructura auxiliar para usar en Heap y Abb
+typedef struct vuelo_resumido{
+    char* priority;
+    char* flight_number;
+    char* date;
+}vuelo_resumen_t;
 
 //Estructura completa para usar en Hash
 typedef struct vuelo{
@@ -143,6 +146,18 @@ vuelo_t *vuelo_crear(char* linea){
     return vuelo;
 }
 
+//Crea un vuelo resumido
+vuelo_resumen_t *crear_vuelo_resumen(vuelo_t* vuelo){
+    vuelo_resumen_t *vuelo_resumen = malloc(sizeof(vuelo_resumen_t));
+    if(!vuelo_resumen) return NULL;
+
+    vuelo_resumen->priority = vuelo->priority;
+    vuelo_resumen->flight_number = vuelo->flight_number;
+    vuelo_resumen->date = vuelo->date;
+
+    return vuelo_resumen;
+}
+
 //Destruye el vuelo completo
 void destruir_vuelo(void* _vuelo_){
     vuelo_t* vuelo = _vuelo_;
@@ -163,7 +178,7 @@ void destruir_vuelo(void* _vuelo_){
 int buscar_mayor(const char fecha1, const char fecha2){
     if(fecha1 > fecha2) return 1;
     return -1;
-}
+} // ¡¡REVISAR ESTA FUNCIÓN | NO LA VEO NECESARIA, SON CHAR LOS QUE RECIBE!!
 
 //Comparación por date y flight_number (ver_tablero, borrar y main)
 int date_comp(const char* fecha1, const char* fecha2){
@@ -181,8 +196,8 @@ lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, int
     lista_t* lista_vuelos = lista_crear();
     if (!lista_vuelos) return NULL;
 
-    vuelo_t* vuelo = NULL;
-    bool ascendente = !strcmp(modo, ASCENDENTE);
+    vuelo_resumen_t* vuelo = NULL;
+    bool ascendente = !strcmp(modo, "asc");
     int tope = 0;
 
     while( (!abb_iter_in_al_final(iter)) && ( (tope < cantidad_vuelos) || (cantidad_vuelos == -1)) ){
@@ -203,7 +218,7 @@ void imprimir_lista_vuelos(lista_t* lista_vuelos){
     if(!lista_iter) return;
 
     while(!lista_iter_al_final(lista_iter)){
-        vuelo_t* vuelo_actual = (vuelo_t*)lista_iter_ver_actual(lista_iter);
+        vuelo_resumen_t* vuelo_actual = (vuelo_resumen_t*)lista_iter_ver_actual(lista_iter);
         printf("%s - %s\n", vuelo_actual->date, vuelo_actual->flight_number);
         lista_iter_avanzar(lista_iter);
     }
@@ -220,11 +235,11 @@ void imprimir_vuelo(vuelo_t* vuelo){
 
 //Comparación por priority y flight_number (prioridad_vuelo)
 int priority_comp(const void* vuelo_1, const void* vuelo_2){
-    if (atoi(((const vuelo_t*)vuelo_1)->priority) > atoi(((const vuelo_t*)vuelo_2)->priority)) return -1;
-    else if (atoi(((const vuelo_t*)vuelo_1)->priority) < atoi(((const vuelo_t*)vuelo_2)->priority)) return 1;
+    if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) > atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return -1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->priority) < atoi(((const vuelo_resumen_t*)vuelo_2)->priority)) return 1;
 
-    else if (atoi(((const vuelo_t*)vuelo_1)->flight_number) > atoi(((const vuelo_t*)vuelo_2)->flight_number)) return -1;
-    else if (atoi(((const vuelo_t*)vuelo_1)->flight_number) < atoi(((const vuelo_t*)vuelo_2)->flight_number)) return 1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) > atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return -1;
+    else if (atoi(((const vuelo_resumen_t*)vuelo_1)->flight_number) < atoi(((const vuelo_resumen_t*)vuelo_2)->flight_number)) return 1;
 
     return 0;
 }
@@ -234,24 +249,21 @@ void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash
     lista_iter_t* lista_iter = lista_iter_crear(lista_vuelos);
     if(!lista_iter) return;
 
-    vuelo_t* vuelo = NULL;
+    vuelo_resumen_t* vuelo_resumen = NULL;
+    vuelo_t* vuelo_completo = NULL;
 
     while(!lista_iter_al_final(lista_iter)){
-        vuelo = lista_iter_ver_actual(lista_iter);
-        imprimir_vuelo(vuelo);
-
-        hash_borrar(hash, vuelo->flight_number);
-
+        vuelo_resumen = lista_iter_ver_actual(lista_iter);
+        vuelo_completo = hash_borrar(hash, vuelo_resumen->flight_number);
         char* date_fnumber[3];
-        date_fnumber[0] = vuelo->date;
-        date_fnumber[1] = vuelo->flight_number;
+        date_fnumber[0] = vuelo_completo->date;
+        date_fnumber[1] = vuelo_completo->flight_number;
         date_fnumber[2] = NULL;
         char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
         abb_borrar(abb, clave_abb);
-
-        destruir_vuelo(vuelo);
+        imprimir_vuelo(vuelo_completo);
+        destruir_vuelo(vuelo_completo);
         lista_iter_avanzar(lista_iter);
-        free(clave_abb);
     }
     lista_iter_destruir(lista_iter);
 }
@@ -267,7 +279,7 @@ void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash
 bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
     //agregar_archivo <archivo>
 
-    if(!comando[1] || comando[2]) return false;
+    if(!comando[1]) return false;
 
     FILE* archivo = fopen(comando[1], "r");
     if(!archivo) return false;
@@ -285,13 +297,19 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
 
         if(hash_pertenece(hash, vuelo->flight_number)){
             char* _date_fnumber[3];
-            _date_fnumber[0] = ((vuelo_t*)hash_obtener(hash, vuelo->flight_number))->date;
+            _date_fnumber[0] = vuelo->date;
             _date_fnumber[1] = vuelo->flight_number;
-            //El flight_number es el mismo, pero el date puede cambiar
             _date_fnumber[2] = NULL;
             char* _clave_abb = join(_date_fnumber, '|');
             abb_borrar(abb, _clave_abb);
             free(_clave_abb);
+        }
+
+        vuelo_resumen_t *vuelo_resumen = crear_vuelo_resumen(vuelo);
+        if(!vuelo_resumen){
+            destruir_vuelo(vuelo);
+            fclose(archivo);
+            return false;
         }
 
         char* date_fnumber[3];
@@ -300,12 +318,12 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
         date_fnumber[2] = NULL;
         char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
 
-        if(!abb_guardar(abb, clave_abb, vuelo)){
+        if(!abb_guardar(abb, clave_abb, vuelo_resumen)){
             destruir_vuelo(vuelo);
             fclose(archivo);
             return false;
         }
-
+        free(clave_abb);
         if(!hash_guardar(hash, vuelo->flight_number, vuelo)){
             destruir_vuelo(vuelo);
             fclose(archivo);
@@ -326,13 +344,12 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
 bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     //ver_tablero <K cantidad vuelos> <modo: asc/desc> <desde> <hasta>
 
-    if(!comando[1] || !comando[2] || !comando[3] ||
-    !comando[4] || comando[5] || !isdigit(comando[1][0])) return false;
+    if(!comando[1] || !comando[2] || !comando[3] || !comando[4]) return false;
 
     int cantidad_vuelos = atoi(comando[1]);
     if(cantidad_vuelos <= 0) return false;
     char* modo = comando[2];
-    if(strcmp(modo, ASCENDENTE) && strcmp(modo, DESCENDENTE)){
+    if(strcmp(modo, "asc") && strcmp(modo, "desc")){
         free_strv(comando);
         return false;
     }
@@ -342,8 +359,6 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     if(date_comp(fecha_inicial, fecha_final) > 0) return false;
 
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
-    //Aca le pasamos fecha_inicial en vez de la clave correcta
-    //Pero funciona
     if(!iter){
         free_strv(comando);
         return false;
@@ -368,7 +383,7 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
 bool info_vuelo(char** comando, hash_t* hash){
     //info_vuelo <numero de vuelo>
 
-    if(!comando[1] || comando[2]) return false;
+    if(!comando[1]) return false;
 
     if(hash_pertenece(hash, comando[1])){
         vuelo_t* vuelo = hash_obtener(hash, comando[1]);
@@ -386,7 +401,8 @@ bool info_vuelo(char** comando, hash_t* hash){
 bool prioridad_vuelos(char** comando, hash_t* hash){
     //prioridad_vuelos <K cantidad vuelos>
 
-    if(!comando[1] || comando[2] || !isdigit(comando[1][0])) return false;
+    if(!comando[1]) return false;
+
     heap_t* heap = heap_crear(priority_comp);
     //Debe ser un Heap de Mínimos, por lo que la funcion de comparacion debe estar al reves
     if (!heap) return false;
@@ -409,15 +425,16 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
 
     while (!hash_iter_al_final(hash_iter)){
         const char* clave_vuelo = hash_iter_ver_actual(hash_iter);
-        vuelo_t* vuelo_heap = hash_obtener(hash, clave_vuelo);
+        vuelo_resumen_t* vuelo_heap = crear_vuelo_resumen((vuelo_t*)hash_obtener(hash, clave_vuelo));
         if (contador < cantidad){
             heap_encolar(heap, vuelo_heap);
             contador++;
         }
-        else if (priority_comp(vuelo_heap, (vuelo_t*)heap_ver_max(heap)) < 0){
-            heap_desencolar(heap);
+        else if (priority_comp(vuelo_heap, (vuelo_resumen_t*)heap_ver_max(heap)) < 0){
+            free(heap_desencolar(heap));
             heap_encolar(heap, vuelo_heap);
         }
+        else free(vuelo_heap);
         hash_iter_avanzar(hash_iter);
     }
 
@@ -426,8 +443,9 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
     }
 
     while(!lista_esta_vacia(lista)){
-        vuelo_t* vuelo_actual = lista_borrar_primero(lista);
+        vuelo_resumen_t* vuelo_actual = (vuelo_resumen_t*)lista_borrar_primero(lista);
         printf("%s - %s\n", vuelo_actual->priority, vuelo_actual->flight_number);
+        free(vuelo_actual);
     }
 
     hash_iter_destruir(hash_iter);
@@ -444,18 +462,16 @@ bool prioridad_vuelos(char** comando, hash_t* hash){
 bool borrar(char** comando, hash_t* hash, abb_t* abb){
     //borrar <desde> <hasta>
 
-    if(!comando[1] || !comando[2] || comando[3]) return false;
+    if(!comando[1] || !comando[2]) return false;
 
     char* fecha_inicial = comando[1];
     char* fecha_final = comando[2];
     if(date_comp(fecha_inicial, fecha_final) > 0) return false;
 
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
-    //Aca le pasamos fecha_inicial en vez de la clave correcta
-    //Pero funciona
     if(!iter) return false;
 
-    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, -1, ASCENDENTE); //HACER UN DEFINE CON ASCENDENTE Y DESCENDENTE
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, -1, "asc"); //HACER UN DEFINE CON ASCENDENTE Y DESCENDENTE
     if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
@@ -528,7 +544,7 @@ int main(){
         return 1;
     }
 
-    abb_t* abb = abb_crear(date_comp, NULL);
+    abb_t* abb = abb_crear(date_comp, free);
     if(!abb){
         free(hash);
         return 1;

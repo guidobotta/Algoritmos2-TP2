@@ -1,0 +1,5 @@
+agregar_archivo vuelos-algueiza-parte-01.csv
+borrar 2017-04-08T11:15:29 2019-10-04T04:19:24
+agregar_archivo vuelos-algueiza-parte-02.csv
+agregar_archivo vuelos-algueiza-parte-03.csv
+borrar 2017-04-08T11:15:29 2019-10-04T04:19:24
