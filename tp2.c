@@ -175,29 +175,21 @@ void destruir_vuelo(void* _vuelo_){
 }
 
 //Devuelve el mayor de los valores
-int buscar_mayor(const char* fecha1, const char* fecha2, int i){
-    char valor1[2];
-    char valor2[2];
-
-    valor1[0] = fecha1[i];
-    valor1[1] = '\0';
-    valor2[0] = fecha2[i];
-    valor2[1] = '\0';
-
-    if(atoi(valor1) > atoi(valor2)) return 1;
+int buscar_mayor(const char fecha1, const char fecha2){
+    if(fecha1 > fecha2) return 1;
     return -1;
 } // ¡¡REVISAR ESTA FUNCIÓN | NO LA VEO NECESARIA, SON CHAR LOS QUE RECIBE!!
 
-//Comparación por date (ver_tablero, borrar y main)
+//Comparación por date y flight_number (ver_tablero, borrar y main)
 int date_comp(const char* fecha1, const char* fecha2){
     size_t tope = strlen(fecha1)+1;
     for(int i=0; i<tope; i++){
         if(fecha1[i] != fecha2[i]){
-            return buscar_mayor(fecha1, fecha2, i);
+            return buscar_mayor(fecha1[i], fecha2[i]);
         }
     }
     return 0;
-}// ¡¡FALTA COMPARAR POR NUMERO DE VUELO!!
+}
 
 //Crea una lista de vuelos ordenados segun el modo y lo devuelve (ver_tablero y borrar)
 lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, char* modo){
@@ -303,8 +295,13 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
             fclose(archivo);
             return false;
         }
-        //Si falla alguna de estas operaciones, destruimos el abb y hash? Perderíamos los vuelos anteriores
-        if(!abb_guardar(abb, vuelo->date, vuelo_resumen)){
+        
+        char* date_fnumber[3];
+        date_fnumber[0] = vuelo->date;
+        date_fnumber[1] = vuelo->flight_number;
+        date_fnumber[2] = NULL;
+        char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
+        if(!abb_guardar(abb, clave_abb, vuelo_resumen)){
             destruir_vuelo(vuelo);
             fclose(archivo);
             return false;
