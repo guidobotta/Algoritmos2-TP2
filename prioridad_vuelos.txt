@@ -1,5 +1,6 @@
 agregar_archivo vuelos-algueiza-parte-01.csv
-prioridad_vuelos 5
 agregar_archivo vuelos-algueiza-parte-02.csv
 agregar_archivo vuelos-algueiza-parte-03.csv
-prioridad_vuelos 6
+agregar_archivo vuelos-algueiza-parte-04.csv
+agregar_archivo vuelos-algueiza-parte-05.csv
+prioridad_vuelos 50

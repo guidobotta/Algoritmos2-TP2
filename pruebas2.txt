@@ -1,9 +1,15 @@
-agregar_archivo vuelos-algueiza-parte-01.csv
-agregar_archivo vuelos-algueiza-parte-02.csv
+//agregar_archivo vuelos-algueiza-parte-01.csv
+//info_vuelo 4883
+//borrar 2017-03-01T10:00:00 2019-10-04T20:00:00
+//agregar_archivo vuelos-algueiza-parte-02.csv
+//info_vuelo 4883
 agregar_archivo vuelos-algueiza-parte-03.csv
-agregar_archivo vuelos-algueiza-parte-04.csv
-agregar_archivo vuelos-algueiza-parte-05.csv
-ver_tablero 8 desc 2018-03-01T10:00:00 2018-10-04T20:00:00
-ver_tablero -8 desc 2018-03-01T10:00:00 2018-10-04T20:00:00
-ver_tablero c desc 2018-03-01T10:00:00 2018-10-04T20:00:00
-prioridad_vuelos c
+//info_vuelo 4883
+//agregar_archivo vuelos-algueiza-parte-04.csv
+//info_vuelo 4883
+//agregar_archivo vuelos-algueiza-parte-05.csv
+//info_vuelo 4883
+ver_tablero 10 asc 2017-03-01T10:00:00 2019-10-04T20:00:00
+ver_tablero 10 desc 2018-03-01T10:00:00 2018-10-04T20:00:00
+//ver_tablero c desc 2018-03-01T10:00:00 2018-10-04T20:00:00
+//prioridad_vuelos c

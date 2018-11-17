@@ -11,11 +11,11 @@ typedef struct nodo{
     struct nodo* proximo;
 }nodo_t;
 
-typedef struct lista{
+struct lista{
     nodo_t* primero;
     nodo_t* ultimo;
     size_t cantidad;
-}lista_t;
+};
 
 /* ******************************************************************
  *                    PRIMITIVAS DEL NODO
@@ -144,11 +144,11 @@ void lista_iterar(lista_t *lista, bool visitar(void *dato, void *extra), void *e
  *                PRIMITIVAS DEL ITERADOR EXTERNO
  * *****************************************************************/
 
-typedef struct lista_iter{
+struct lista_iter{
     nodo_t* actual;
     nodo_t* anterior;
     lista_t* lista;
-}lista_iter_t;
+};
 
 lista_iter_t *lista_iter_crear(lista_t *lista){
     lista_iter_t* iter = malloc(sizeof(lista_iter_t));

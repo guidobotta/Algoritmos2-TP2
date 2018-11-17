@@ -16,13 +16,10 @@
 
 /*
     Para cada archivo nuevo:
-    *Guardar en ABB con clave "date"
+    *Guardar en ABB con clave "date|flight_number"
     *Guardar en hash con clave "flight_number"
-    *Guardar en heap de maximos struct vuelo_heap
 */
 
-//SON TODOS CHAR*, VEMOS MAS ADELANTE QUE TIPO DE DATO CONVIENE PARA CADA UNO
-//REEMPLAZAR VUELO POR FLIGHT? PASAR TODO A INGLES O A ESPAÑOL? WTF CON "TODO" JAJA
 
 /* ******************************************************************
  *                     ESTRUCTURAS AUXILIARES
@@ -177,20 +174,18 @@ int date_comp(const char* fecha1, const char* fecha2){
 }
 
 //Crea una lista de vuelos ordenados segun el modo y lo devuelve (ver_tablero y borrar)
-lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, int cantidad_vuelos, char* modo){
+lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, char* modo){
     lista_t* lista_vuelos = lista_crear();
     if (!lista_vuelos) return NULL;
 
     vuelo_t* vuelo = NULL;
     bool ascendente = !strcmp(modo, ASCENDENTE);
-    int tope = 0;
 
-    while( (!abb_iter_in_al_final(iter)) && ( (tope < cantidad_vuelos) || (cantidad_vuelos == -1)) ){
+    while(!abb_iter_in_al_final(iter)){
         vuelo = abb_obtener(abb, abb_iter_in_ver_actual(iter));
         if(date_comp(vuelo->date, fecha_final) > 0) break;
         if(ascendente) lista_insertar_ultimo(lista_vuelos, vuelo);
         else lista_insertar_primero(lista_vuelos, vuelo);
-        tope++;
         abb_iter_in_avanzar(iter);
     }
 
@@ -198,13 +193,14 @@ lista_t* crear_lista_vuelos(abb_iter_t* iter, abb_t* abb, char* fecha_final, int
 }
 
 //Imprime la lista de vuelos de ver_tablero (ver_tablero)
-void imprimir_lista_vuelos(lista_t* lista_vuelos){
+void imprimir_lista_vuelos(lista_t* lista_vuelos, int cantidad_vuelos){
     lista_iter_t* lista_iter = lista_iter_crear(lista_vuelos);
     if(!lista_iter) return;
-
-    while(!lista_iter_al_final(lista_iter)){
+    int tope = 0;
+    while(!lista_iter_al_final(lista_iter) && ((tope < cantidad_vuelos) || (cantidad_vuelos == -1))){
         vuelo_t* vuelo_actual = (vuelo_t*)lista_iter_ver_actual(lista_iter);
         printf("%s - %s\n", vuelo_actual->date, vuelo_actual->flight_number);
+        tope++;
         lista_iter_avanzar(lista_iter);
     }
 
@@ -220,11 +216,12 @@ void imprimir_vuelo(vuelo_t* vuelo){
 
 //Comparación por priority y flight_number (prioridad_vuelo)
 int priority_comp(const void* vuelo_1, const void* vuelo_2){
-    if (atoi(((const vuelo_t*)vuelo_1)->priority) > atoi(((const vuelo_t*)vuelo_2)->priority)) return -1;
-    else if (atoi(((const vuelo_t*)vuelo_1)->priority) < atoi(((const vuelo_t*)vuelo_2)->priority)) return 1;
-
-    else if (atoi(((const vuelo_t*)vuelo_1)->flight_number) > atoi(((const vuelo_t*)vuelo_2)->flight_number)) return -1;
-    else if (atoi(((const vuelo_t*)vuelo_1)->flight_number) < atoi(((const vuelo_t*)vuelo_2)->flight_number)) return 1;
+    const vuelo_t* vuelo1 = vuelo_1;
+    const vuelo_t* vuelo2 = vuelo_2;
+    if (atoi(vuelo1->priority) > atoi(vuelo2->priority)) return -1;
+    else if (atoi(vuelo1->priority) < atoi(vuelo2->priority)) return 1;
+    else if (strcmp(vuelo1->flight_number, vuelo2->flight_number) < 0) return -1;
+    else if (strcmp(vuelo1->flight_number, vuelo2->flight_number) > 0) return 1;
 
     return 0;
 }
@@ -246,7 +243,7 @@ void borrar_e_imprimir_elementos(lista_t* lista_vuelos, abb_t* abb, hash_t* hash
         date_fnumber[0] = vuelo->date;
         date_fnumber[1] = vuelo->flight_number;
         date_fnumber[2] = NULL;
-        char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
+        char* clave_abb = join(date_fnumber, '|');
         abb_borrar(abb, clave_abb);
 
         destruir_vuelo(vuelo);
@@ -298,7 +295,7 @@ bool agregar_archivo(char** comando, hash_t *hash, abb_t* abb){
         date_fnumber[0] = vuelo->date;
         date_fnumber[1] = vuelo->flight_number;
         date_fnumber[2] = NULL;
-        char* clave_abb = join(date_fnumber, '|'); //Hay que liberarlo
+        char* clave_abb = join(date_fnumber, '|');
 
         if(!abb_guardar(abb, clave_abb, vuelo)){
             destruir_vuelo(vuelo);
@@ -342,21 +339,20 @@ bool ver_tablero(char** comando, hash_t* hash, abb_t* abb){
     if(date_comp(fecha_inicial, fecha_final) > 0) return false;
 
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
-    //Aca le pasamos fecha_inicial en vez de la clave correcta
-    //Pero funciona
+    //Aca le pasamos fecha_inicial en vez de la clave correcta, pero funciona
     if(!iter){
         free_strv(comando);
         return false;
     }
 
-    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, cantidad_vuelos, modo);
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, modo);
     if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
     }
-    imprimir_lista_vuelos(lista_vuelos);
+    imprimir_lista_vuelos(lista_vuelos, cantidad_vuelos);
 
-    lista_destruir(lista_vuelos, NULL); //Chequear si no hay que pasarle destruir_vuelo
+    lista_destruir(lista_vuelos, NULL);
     abb_iter_in_destruir(iter);
     return true;
 }
@@ -451,18 +447,17 @@ bool borrar(char** comando, hash_t* hash, abb_t* abb){
     if(date_comp(fecha_inicial, fecha_final) > 0) return false;
 
     abb_iter_t* iter = abb_buscar_clave_e_iterar(abb, fecha_inicial);
-    //Aca le pasamos fecha_inicial en vez de la clave correcta
-    //Pero funciona
+    //Aca le pasamos fecha_inicial en vez de la clave correcta, pero funciona
     if(!iter) return false;
 
-    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, -1, ASCENDENTE); //HACER UN DEFINE CON ASCENDENTE Y DESCENDENTE
+    lista_t* lista_vuelos = crear_lista_vuelos(iter, abb, fecha_final, ASCENDENTE);
     if(!lista_vuelos){
         abb_iter_in_destruir(iter);
         return false;
     }
     borrar_e_imprimir_elementos(lista_vuelos, abb, hash);
 
-    lista_destruir(lista_vuelos, NULL); //Chequear si no hay que pasarle destruir_vuelo
+    lista_destruir(lista_vuelos, NULL);
     abb_iter_in_destruir(iter);
     return true;
 
@@ -497,30 +492,13 @@ void ejecucion(char* linea, hash_t* hash, abb_t* abb){
     }
     else exito = false;
 
-    if(!exito) fprintf(stderr, "Error en el comando %s\n", comando[0]);
+    if(!exito) fprintf(stderr, "Error en comando %s\n", comando[0]);
     else printf("OK\n");
 
     free_strv(comando);
 }
 
-/*
-Ejecuta el main.c y se queda esperando input del usuario
 
-#agregar_archivo <nombre_archivo>
-Llama a la funcion agregar_archivo(nombre_archivo);
-
-#ver_tablero <k cantidad vuelo> <modo: asc/desc> <desde> <hasta>
-Llama a la funcion ver_tablero();
-
-#info_vuelo <codigo vuelo>
-Llama a la funcion info_vuelo();
-
-#prioridad_vuelos <k cantidad vuelos>
-Llama a la funcion prioridad_vuelos();
-
-#borrar <desde> <hasta>
-Llama a la funcion borrar();
-*/
 int main(){
 
     hash_t* hash = hash_crear(destruir_vuelo);

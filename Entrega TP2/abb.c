@@ -197,14 +197,12 @@ void in_order(abb_nodo_t* actual, bool visitar(const char *, void *, void*), voi
 
 void abb_in_order(abb_t *arbol, bool visitar(const char *, void *, void *), void *extra){
     bool todo_ok = true;
-    return in_order(arbol->raiz, visitar, extra, &todo_ok);
+    in_order(arbol->raiz, visitar, extra, &todo_ok);
 }
 
 /* ******************************************************************
  *                PRIMITIVAS DEL ITERADOR EXTERNO
  * *****************************************************************/
-
-typedef struct abb_iter abb_iter_t;
 
 struct abb_iter{
     pila_t *pila;
@@ -214,7 +212,7 @@ struct abb_iter{
 void apilar_izquierdos(abb_iter_t *iter, abb_nodo_t *actual){
     if(!actual) return;
     pila_apilar(iter->pila, actual); //Chequeamos si falla?
-    return apilar_izquierdos(iter, actual->izq);
+    apilar_izquierdos(iter, actual->izq);
 }
 
 abb_iter_t *abb_iter_in_crear(const abb_t *arbol){
@@ -265,8 +263,8 @@ void buscar_hijo_iter(abb_nodo_t* actual, const char* clave, abb_comparar_clave_
 
     if(!comp) return;
 
-    if(comp < 0) return buscar_hijo_iter(actual->der, clave, cmp, pila);
-    return buscar_hijo_iter(actual->izq, clave, cmp, pila);
+    if(comp < 0) buscar_hijo_iter(actual->der, clave, cmp, pila);
+    buscar_hijo_iter(actual->izq, clave, cmp, pila);
 }
 
 abb_iter_t* abb_buscar_clave_e_iterar(abb_t* arbol, const char* clave){
